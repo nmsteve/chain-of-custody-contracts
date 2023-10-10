@@ -6,17 +6,20 @@ pragma solidity ^0.8.0;
  * @dev Smart contract for managing the chain of custody of evidence items.
  */
 contract EvidenceChainOfCustody {
+
     struct EvidenceItem {
         uint256 id;
         string name;
-        string[] stageDetails; // an array to store stage details
     }
 
     mapping(uint256 => EvidenceItem) public evidenceItems;
+    mapping(uint256 => mapping(uint8 => string)) public evidenceStageDetails; // Mapping to store evidence stage details
+
+    mapping(uint8 => string) public stageNames; // Mapping to store stage names
+
     mapping(address => bool) public authorizedAddresses;
     address public admin;
 
-    string[] public stageNames; // an array to store stage names
 
     event EvidenceStageDetailsUpdated(
         uint256 indexed itemId,
@@ -42,12 +45,13 @@ contract EvidenceChainOfCustody {
 
     /**
      * @dev Add a new stage with a specified name.
+     * @param _stageId The ID of the new stage.
      * @param _stageName The name of the new stage.
      */
-    function addNewStage(string memory _stageName) public onlyAdmin {
-        stageNames.push(_stageName);
-        uint8 stageId = uint8(stageNames.length - 1); // Assign the stage ID based on the array index
-        emit NewStageAdded(stageId, _stageName);
+    function addNewStage(uint8 _stageId, string memory _stageName) public onlyAdmin {
+        require(bytes(stageNames[_stageId]).length == 0, "Stage already exists");
+        stageNames[_stageId] = _stageName;
+        emit NewStageAdded(_stageId, _stageName);
     }
 
     /**
@@ -61,11 +65,7 @@ contract EvidenceChainOfCustody {
             "Evidence item with this ID already exists"
         );
 
-        EvidenceItem storage newItem = evidenceItems[_id];
-        newItem.id = _id;
-        newItem.name = _name;
-
-        // Emit an event to indicate the addition of a new evidence item
+        evidenceItems[_id] = EvidenceItem(_id, _name);
         emit EvidenceItemAdded(_id, _name);
     }
 
@@ -84,9 +84,7 @@ contract EvidenceChainOfCustody {
             evidenceItems[_id].id != 0,
             "Evidence item with this ID does not exist"
         );
-        require(_stage < stageNames.length, "Invalid stage index");
-
-        evidenceItems[_id].stageDetails.push(_details);
+        evidenceStageDetails[_id][_stage] = _details;
         emit EvidenceStageDetailsUpdated(_id, _stage, _details);
     }
 
@@ -112,7 +110,6 @@ contract EvidenceChainOfCustody {
      * @return The name of the stage.
      */
     function getStageName(uint8 _stage) public view returns (string memory) {
-        require(_stage < stageNames.length, "Invalid stage index");
         return stageNames[_stage];
     }
 
@@ -121,7 +118,11 @@ contract EvidenceChainOfCustody {
      * @param _id The ID of the evidence item.
      * @return The number of stages.
      */
-    function getStageCount(uint256 _id) public view returns (uint256) {
-        return evidenceItems[_id].stageDetails.length;
+    function getStageCount(uint256 _id) public view returns (uint8) {
+        uint8 count = 0;
+        while (bytes(evidenceStageDetails[_id][count]).length > 0) {
+            count++;
+        }
+        return count;
     }
 }
