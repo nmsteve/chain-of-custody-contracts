@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
+const Table = require('cli-table');
 
 describe('EvidenceChainOfCustody contract', function () {
 
@@ -171,60 +172,6 @@ describe('EvidenceChainOfCustody contract', function () {
             expect(updatedDetails).to.equal(newDetails);
         });
 
-        it('should log evidence details for all stages', async function () {
-
-            const { evidenceChainOfCustody, authorizedUser1 } = await loadFixture(deploy)
-            // Add one new evidence item
-            await evidenceChainOfCustody.addEvidenceItem(1, 'Proccess tree');
-
-
-            const stages = [
-                'Identification',
-                'Collection',
-                'Acquisition',
-                'Preservation',
-                'Analysis',
-                'Presentation',
-                'Archiving',
-            ];
-
-            // Add new stages
-            for (let i = 0; i < stages.length; i++) {
-                await evidenceChainOfCustody.addNewStage(stages[i]);
-            }
-
-            //add details
-            await evidenceChainOfCustody.updateStageDetails(1, 1, "Identified to help tell the software that was used to remotely access  the PC")
-            await evidenceChainOfCustody.updateStageDetails(1, 2, "The command `pstree` has been used to get the proccess tree and the process tree save in .txt file. The file has then been transfter to flashdisk v003")
-            await evidenceChainOfCustody.updateStageDetails(1, 3, "No futher acquisition is required has the evidence has been recieved as volatile evidence")
-            await evidenceChainOfCustody.updateStageDetails(1, 4, "The file was moved  from the volitale data flash disk (V001)  to the evidence presatavion disk (P007)into a folder that was creted for this case with the name DE7698. The file was the encrypted with a password")
-            await evidenceChainOfCustody.updateStageDetails(1, 5, "The Folder DE7698 was copied from the presavation disk (P007) to the analysis lab Disk (A037) thus moving the this evidence item along. The analysis report has been developed and saved in a folder name processTree together with this evidence item")
-            await evidenceChainOfCustody.updateStageDetails(1, 6, "The original file stored on P007 has be copied to the case presentation disk (C003), the Analysis reported has also been copied to the case presetation disk (C003) and both files save on a folder named ProccessTree ")
-
-            //log out the evidenceItem Chain of custody
-            const evidenceIdnName = await evidenceChainOfCustody.evidenceItems(1)
-            let evidenceStageDetails = []
-
-            for (let i = 1; i < stages.length; i++) {
-                const currentStageName = await evidenceChainOfCustody.getStageName(i);
-                //console.log(currentStageName)
-                const currentStageDetails = await evidenceChainOfCustody.evidenceStageDetails(1, i);
-                //console.log(currentStageDetails)
-                const details = {
-                    currentStageName: currentStageName,
-                    currentStageDetails: currentStageDetails
-                }
-
-                console.log(details)
-                evidenceStageDetails.push(details)
-
-            }
-
-            console.log(`evidenceID:${evidenceIdnName.id} evidenceName: ${evidenceIdnName.name}`)
-            //console.log(`${evidenceStageDetails[0]}`)
-
-        });
-
         it('should not update stage details for a non-existing evidence item', async function () {
             const { evidenceChainOfCustody } = await loadFixture(deploy)
             const nonExistingEvidenceId = 2;
@@ -291,7 +238,63 @@ describe('EvidenceChainOfCustody contract', function () {
         });
     });
 
-});
+    describe(`Get data`, function () {
+
+        it('should log evidence details for all stages', async function () {
+            const { evidenceChainOfCustody, authorizedUser1 } = await loadFixture(deploy);
+
+            // Add one new evidence item
+            await evidenceChainOfCustody.addEvidenceItem(1, 'Proccess tree');
+
+            const stages = [
+                'Identification',
+                'Collection',
+                'Acquisition',
+                'Preservation',
+                'Analysis',
+                'Presentation',
+                'Archiving',
+            ];
+
+            // Add new stages
+            for (let i = 0; i < stages.length; i++) {
+                await evidenceChainOfCustody.addNewStage(stages[i]);
+            }
+
+            // Add details
+            await evidenceChainOfCustody.updateStageDetails(1, 1, "Identified to help tell the software that was used to remotely access the PC");
+            await evidenceChainOfCustody.updateStageDetails(1, 2, "The command `pstree` has been used to get the proccess tree and the process tree saved in .txt file. The file has then been transferred to flashdisk v003");
+            await evidenceChainOfCustody.updateStageDetails(1, 3, "No further acquisition is required as the evidence has been received as volatile evidence");
+            await evidenceChainOfCustody.updateStageDetails(1, 4, "The file was moved from the volitale data flash disk (V001) to the evidence presentation disk (P007) into a folder that was created for this case with the name DE7698. The file was then encrypted with a password");
+            await evidenceChainOfCustody.updateStageDetails(1, 5, "The Folder DE7698 was copied from the presavation disk (P007) to the analysis lab Disk (A037), thus moving the evidence item along. The analysis report has been developed and saved in a folder named processTree together with this evidence item");
+            await evidenceChainOfCustody.updateStageDetails(1, 6, "The original file stored on P007 has been copied to the case presentation disk (C003), the Analysis report has also been copied to the case presentation disk (C003) and both files saved in a folder named ProcessTree");
+
+            // Log out the evidence item Chain of Custody
+            const evidenceIdnName = await evidenceChainOfCustody.evidenceItems(1);
+            const evidenceStageDetails = [];
+
+            for (let i = 1; i < stages.length; i++) {
+                const currentStageName = await evidenceChainOfCustody.getStageName(i);
+                const currentStageDetails = await evidenceChainOfCustody.evidenceStageDetails(1, i);
+
+                const details = {
+                    Stage: currentStageName,
+                    Details: currentStageDetails,
+                };
+
+                evidenceStageDetails.push(details);
+            }
+
+            console.log(`Evidence ID: ${evidenceIdnName.id} Evidence Name: ${evidenceIdnName.name}`);
+
+            console.log(evidenceStageDetails)
+        });
+
+
+
+    });
+
+});     
 
 
 
