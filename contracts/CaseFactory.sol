@@ -32,14 +32,26 @@ contract CaseFactory {
         _;
     }
 
+    /**
+     * @dev Add an address as an authorized user.
+     * @param _userAddress The address to be authorized.
+     */
     function addAuthorizedUser(address _userAddress) public onlyAdmin {
         authorizedUsers[_userAddress] = true;
     }
 
+    /**
+     * @dev Remove an address from the list of authorized users.
+     * @param _userAddress The address to be removed from the list of authorized users.
+     */
     function removeAuthorizedUser(address _userAddress) public onlyAdmin {
         authorizedUsers[_userAddress] = false;
     }
 
+    /**
+     * @dev Deploy a new case contract.
+     * @param _caseID The ID of the new case.
+     */
     function deployCase(uint256 _caseID) public onlyAuthorized {
         require(cases[_caseID].caseID == 0, "Case with this ID already exists");
         uint256 deploymentDate = block.timestamp;
@@ -48,18 +60,31 @@ contract CaseFactory {
         emit CaseDeployed(_caseID, address(newCase), deploymentDate);
     }
 
+    /**
+     * @dev Disable a case, preventing further actions.
+     * @param _caseID The ID of the case to be disabled.
+     */
     function disableCase(uint256 _caseID) public onlyAdmin {
         require(cases[_caseID].caseID != 0, "Case with this ID does not exist");
         require(cases[_caseID].active == true, "Case is already disabled");
         cases[_caseID].active = false;
     }
 
+    /**
+     * @dev Enable a case, allowing actions to be performed.
+     * @param _caseID The ID of the case to be enabled.
+     */
     function enableCase(uint256 _caseID) public onlyAdmin {
         require(cases[_caseID].caseID != 0, "Case with this ID does not exist");
         require(cases[_caseID].active == false, "Case is already enabled");
         cases[_caseID].active = true;
     }
 
+    /**
+     * @dev Get the status of a case (active or disabled).
+     * @param _caseID The ID of the case for which the status is requested.
+     * @return The status of the case.
+     */
     function getCaseStatus(uint256 _caseID) public view returns (bool) {
         return cases[_caseID].active;
     }
