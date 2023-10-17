@@ -9,11 +9,11 @@ const hre = require("hardhat");
 async function main() {
   
 
-  const evidenceChainOfCustody = await hre.ethers.deployContract("EvidenceChainOfCustody");
-  await evidenceChainOfCustody.waitForDeployment();
+  this.contract = await hre.ethers.deployContract("CaseFactory");
+  await this.contract.waitForDeployment();
 
   console.log(
-    `EvidenceChainOfCustody deployed to ${evidenceChainOfCustody.target}`
+    `contractdeployed to ${this.contract.target}`
   )
 }
 
