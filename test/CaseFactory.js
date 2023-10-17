@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
-describe.only('CaseFactory contract', function () {
+describe('CaseFactory contract', function () {
     let owner, authorizedUser1, authorizedUser2, addr1, addr2, caseFactory;
 
     async function deploy() {
@@ -161,7 +161,7 @@ describe.only('CaseFactory contract', function () {
         expect(caseStatus).to.equal(false);
     });
 
-    it.only('should get all deployed cases and print their data', async function () {
+    it('should get all deployed cases and print their data', async function () {
         const { caseFactory, owner } = await loadFixture(deploy);
 
         // Deploy five cases
