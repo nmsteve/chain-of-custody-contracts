@@ -26,39 +26,7 @@ module.exports = {
         passphrase: "",
       },
     },
-    opt: {
-      url: process.env.OPTIMISM,
-      accounts: {
-        mnemonic: process.env.MNEMONIC,
-        path: "m/44'/60'/0'/0",
-        initialIndex: 0,
-        count: 10,
-        passphrase: "",
-      },
-
-    },
-    arb: {
-      url: process.env.ARBITRUM,
-      accounts: {
-        mnemonic: process.env.MNEMONIC,
-        path: "m/44'/60'/0'/0",
-        initialIndex: 0,
-        count: 10,
-        passphrase: "",
-      },
-
-    },
-    mainnet: {
-      url: process.env.MAIN,
-      accounts: {
-        mnemonic: process.env.MNEMONIC,
-        path: "m/44'/60'/0'/0",
-        initialIndex: 0,
-        count: 10,
-        passphrase: "",
-      },
-
-    }
+  
   },
 
   etherscan: {
