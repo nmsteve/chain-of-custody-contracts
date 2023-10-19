@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
-const Table = require('cli-table');
+
 
 describe('EvidenceChainOfCustody contract', function () {
 
