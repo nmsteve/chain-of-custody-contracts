@@ -11,7 +11,7 @@ describe('EvidenceChainOfCustody contract', function () {
 
         // Deploy the contract
         let EvidenceChainOfCustody = await ethers.getContractFactory('EvidenceChainOfCustody');
-        let evidenceChainOfCustody = await EvidenceChainOfCustody.deploy();
+        let evidenceChainOfCustody = await EvidenceChainOfCustody.deploy(owner.address);
         //await evidenceChainOfCustody.deployed();
         return { owner, authorizedUser1, authorizedUser2, addr1, addr2, evidenceChainOfCustody }
     };

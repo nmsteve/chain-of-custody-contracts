@@ -41,9 +41,10 @@ contract EvidenceChainOfCustody {
         _;
     }
 
-    constructor() {
-        admin = msg.sender;
+    constructor(address _admin) {
+        admin = _admin;
         nextStageId = 1; // Initialize the next stage ID to 1
+        authorizedAddresses[msg.sender] = true;
     }
 
     /**

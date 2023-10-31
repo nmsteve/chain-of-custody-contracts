@@ -9,7 +9,7 @@ const hre = require("hardhat");
 async function main() {
   
 
-  this.contract = await hre.ethers.deployContract("CaseFactory");
+  this.contract = await hre.ethers.deployContract("AdminContract");
   await this.contract.waitForDeployment();
 
   console.log(
