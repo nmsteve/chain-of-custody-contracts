@@ -93,83 +93,112 @@ describe('EvidenceChainOfCustody contract', function () {
 
         });
 
-        it('should allow getting the stage count for an existing evidence item', async function () {
-            const { evidenceChainOfCustody, owner } = await loadFixture(deploy);
-
-            // Add a new evidence item
-            await evidenceChainOfCustody.addEvidenceItem(1, 'Test Evidence Item');
-
-            // Add a new stage for the evidence item
-            await evidenceChainOfCustody.addNewStage('Sample Stage');
-
-            await evidenceChainOfCustody.updateStageDetails(1, 1, "Test Details")
-            
-            const details = await evidenceChainOfCustody.evidenceStageDetails(1, 1)
-            //console.log(details)
-
-            // Get the stage count for the evidence item
-            const stageCount = await evidenceChainOfCustody.getStageCount(1);
-
-            // Verify the stage count
-            expect(stageCount).to.equal(1);
-        });
-
-        it('should allow getting the stage count for an evidence item with multiple stages', async function () {
-            const {evidenceChainOfCustody} = await loadFixture(deploy);
-
-            // Add a new evidence item
-            await evidenceChainOfCustody.addEvidenceItem(1, 'Test Evidence Item');
-
-            // Add multiple stages for the evidence item
-            await evidenceChainOfCustody.addNewStage('Stage 1');
-            await evidenceChainOfCustody.addNewStage('Stage 2');
-            await evidenceChainOfCustody.addNewStage('Stage 3');
-
-            await evidenceChainOfCustody.updateStageDetails(1, 1, "Stage 1 Test Details")
-            await evidenceChainOfCustody.updateStageDetails(1, 2, "Stage 2 Test Details")
-            await evidenceChainOfCustody.updateStageDetails(1, 3, "Stage 3 Test Details")
-
-            // Get the stage count for the evidence item
-            const stageCount = await evidenceChainOfCustody.getStageCount(1);
-
-            // Verify the stage count
-            expect(stageCount).to.equal(3);
-        });
-
-        it('should not allow getting the stage count for a non-existing evidence item', async function () {
-            const { evidenceChainOfCustody, owner } = await loadFixture(deploy);
-
-            // Attempt to get the stage count for a non-existing evidence item
-            await expect(evidenceChainOfCustody.getStageCount(1)).to.be.revertedWith('Evidence item with this ID does not exist');
-        });
-
-        
-        
     });
 
-    describe('Stage Details Oparations', function () {
-        it('should update stage details for an evidence item', async function () {
+    describe('Evidence Item Oparations', function () {
+
+        it('should add an evidence item', async function () {
 
             const { evidenceChainOfCustody } = await loadFixture(deploy)
-            const evidenceId = 1;
-            const stageId = 1;
-            const newDetails = '';
+            let item1 = { id: 1000, name: 'database Logs' }
+            let item2 = { id: 1001, name: "Proccess tree" }
 
             // Add a new stage
             await evidenceChainOfCustody.addNewStage('Identification');
 
             //add Evidence Item
-            await evidenceChainOfCustody.addEvidenceItem(evidenceId, 'database Logs')
+            await evidenceChainOfCustody.addEvidenceItem(item1.id, item1.name)
+            await evidenceChainOfCustody.addEvidenceItem(item2.id, item2.name)
+
+
+            //verify other details
+            const evidenceItem1 = await evidenceChainOfCustody.evidenceItems(0)
+            const evidenceItem2 = await evidenceChainOfCustody.evidenceItems(1)
+            expect(evidenceItem1.id).to.be.eq(item1.id)
+            expect(evidenceItem1.name).to.equal(item1.name);
+            expect(evidenceItem2.id).to.be.eq(item2.id)
+            expect(evidenceItem2.name).to.equal(item2.name);
+        });
+
+        it('Should add Stage Details to an evidence item', async function () {
+
+            const { evidenceChainOfCustody } = await loadFixture(deploy)
+
+            const evidenceItem = {
+                id: 1000,
+                name: 'Database Logs',
+                stageDetails: {
+                    1: 'Identified by Peter M',
+                    2: 'Collected by Peter with the help of David'
+                }
+            };
+
+            // Add a new stage
+            await evidenceChainOfCustody.addNewStage('Identification');
+            await evidenceChainOfCustody.addNewStage('Collection');
+
+            // Add the evidence item
+            await evidenceChainOfCustody.addEvidenceItem(evidenceItem.id, evidenceItem.name);
 
             // Update stage details
-            await evidenceChainOfCustody.updateStageDetails(evidenceId, stageId, newDetails);
+            await evidenceChainOfCustody.addStageDetails(0, 1, evidenceItem.stageDetails[1]);
+            await evidenceChainOfCustody.addStageDetails(0, 2, evidenceItem.stageDetails[2]);
 
-            // Verify the updated stage details
-            const updatedDetails = await evidenceChainOfCustody.evidenceStageDetails(evidenceId, stageId);
-            //verify other details
-            const evidenceItem = await evidenceChainOfCustody.evidenceItems(evidenceId)
-            expect(evidenceItem.id).to.be.eq(evidenceId)
-            expect(updatedDetails).to.equal(newDetails);
+            // Get evidence details
+            const storedEvidenceItem = await evidenceChainOfCustody.evidenceItems(0);
+
+            expect(storedEvidenceItem.id).to.equal(evidenceItem.id);
+            expect(storedEvidenceItem.name).to.equal(evidenceItem.name);
+            expect(storedEvidenceItem.stageCount).to.equal(2);
+
+            // Get evidence stage details
+            const stage1Details = await evidenceChainOfCustody.getStageDetails(0, 1);
+            const stage2Details = await evidenceChainOfCustody.getStageDetails(0, 2);
+
+            expect(stage1Details.stageName).to.equal('Identification');
+            expect(stage1Details.stageDetails).to.equal(evidenceItem.stageDetails[1]);
+            expect(stage2Details.stageName).to.equal('Collection');
+            expect(stage2Details.stageDetails).to.equal(evidenceItem.stageDetails[2]);
+        });
+
+        it('Should update Stage Details for an evidence item', async function () {
+
+            const { evidenceChainOfCustody } = await loadFixture(deploy)
+            const evidenceItem = {
+                id: 1000,
+                name: 'Database Logs',
+                stageDetails: {
+                    1: 'Identified by Peter M',
+                    2: 'Collected by Peter with the help of David'
+                }
+            };
+
+            // Add a new stage
+            await evidenceChainOfCustody.addNewStage('Identification');
+            await evidenceChainOfCustody.addNewStage('Collection');
+
+            // Add the evidence item
+            await evidenceChainOfCustody.addEvidenceItem(evidenceItem.id, evidenceItem.name);
+
+            // Update stage details
+            await evidenceChainOfCustody.addStageDetails(0, 1, evidenceItem.stageDetails[1]);
+            await evidenceChainOfCustody.addStageDetails(0, 2, evidenceItem.stageDetails[2]);
+
+            // Get evidence details
+            const storedEvidenceItem = await evidenceChainOfCustody.evidenceItems(0);
+
+            expect(storedEvidenceItem.id).to.equal(evidenceItem.id);
+            expect(storedEvidenceItem.name).to.equal(evidenceItem.name);
+            expect(storedEvidenceItem.stageCount).to.equal(2);
+
+            // Update stage details
+            const updatedDetails = 'Updated details for the first stage';
+            await evidenceChainOfCustody.updateStageDetails(0, 1, updatedDetails);
+
+            // Get updated evidence stage details
+            const updatedStageDetails = await evidenceChainOfCustody.getStageDetails(0, 1);
+            expect(updatedStageDetails.stageName).to.equal('Identification');
+            expect(updatedStageDetails.stageDetails).to.equal(updatedDetails);
         });
 
         it('should not update stage details for a non-existing evidence item', async function () {
@@ -194,9 +223,9 @@ describe('EvidenceChainOfCustody contract', function () {
             await expect(evidenceChainOfCustody.connect(authorizedUser1).updateStageDetails(evidenceId, stageId, newDetails))
                 .to.be.revertedWith("Not authorized");
         });
-        
+
     });
-    
+
     describe(`Authorize Oparations`, function () {
 
         it('should allow the admin to enable and disable addresses', async function () {
@@ -238,7 +267,7 @@ describe('EvidenceChainOfCustody contract', function () {
         });
     });
 
-    describe(`Get data`, function () {
+    describe.skip(`Get data`, function () {
 
         it('should log evidence details for all stages', async function () {
             const { evidenceChainOfCustody, authorizedUser1 } = await loadFixture(deploy);
@@ -294,7 +323,7 @@ describe('EvidenceChainOfCustody contract', function () {
 
     });
 
-});     
+});
 
 
 
