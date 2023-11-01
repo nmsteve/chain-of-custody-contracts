@@ -29,7 +29,7 @@ task('printPrivateKeys', 'Print the top 10 private keys from the mnemonic')
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.19",
+  solidity: "0.8.22",
   networks: {
     hardhat: {
       forking: {
