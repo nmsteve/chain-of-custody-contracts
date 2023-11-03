@@ -1,23 +1,35 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./EvidenceChainOfCustody.sol";
+import "./Case.sol";
 
 contract CaseFactory {
-    
     address public admin;
 
-    struct Case {
+    struct CaseData {
         address caseContractAddress;
         uint256 caseID;
         uint256 deploymentDate;
         bool active;
     }
 
-    mapping(uint256 => Case) public cases;
+    mapping(uint256 => CaseData) public cases;
     mapping(address => bool) public authorizedUsers;
 
-    event CaseDeployed(uint256 indexed caseID, address caseContractAddress, uint256 deploymentDate);
+    string[] public evidenceStages;
+    uint256[] public caseIDs;
+
+    event CaseDeployed(
+        uint256 indexed caseID,
+        address caseContractAddress,
+        uint256 deploymentDate
+    );
+
+    event CaseDisabled(uint256 indexed caseID);
+    event CaseEnabled(uint256 indexed caseID);
+    event AuthorizedUserAdded(address userAddress);
+    event AuthorizedUserRemoved(address userAddress);
+    event StagesSet(address admin, string[] stages);
 
     constructor() {
         admin = msg.sender;
@@ -29,7 +41,10 @@ contract CaseFactory {
     }
 
     modifier onlyAuthorized() {
-        require(authorizedUsers[msg.sender] || msg.sender == admin, "Not authorized to deploy the chain of custody");
+        require(
+            authorizedUsers[msg.sender] || msg.sender == admin,
+            "Not authorized to deploy the chain of custody"
+        );
         _;
     }
 
@@ -39,6 +54,7 @@ contract CaseFactory {
      */
     function addAuthorizedUser(address _userAddress) public onlyAdmin {
         authorizedUsers[_userAddress] = true;
+        emit AuthorizedUserAdded(_userAddress);
     }
 
     /**
@@ -47,17 +63,29 @@ contract CaseFactory {
      */
     function removeAuthorizedUser(address _userAddress) public onlyAdmin {
         authorizedUsers[_userAddress] = false;
+        emit AuthorizedUserRemoved(_userAddress);
+    }
+
+    /**
+     * @dev Set the stages for use when deploying a case.
+     * @param _stages The array of stage names.
+     */
+    function setCaseStages(string[] memory _stages) public onlyAdmin {
+        evidenceStages = _stages;
+         emit StagesSet(admin, _stages);
     }
 
     /**
      * @dev Deploy a new case contract.
      * @param _caseID The ID of the new case.
      */
-    function deployCase(uint256 _caseID, address _admin) public onlyAuthorized {
+    function deployCase(uint256 _caseID, address _admin, string[] memory _stages) public onlyAuthorized {
         require(cases[_caseID].caseID == 0, "Case with this ID already exists");
         uint256 deploymentDate = block.timestamp;
-        EvidenceChainOfCustody newCase = new EvidenceChainOfCustody(_admin);
-        cases[_caseID] = Case(address(newCase), _caseID, deploymentDate, true);
+        Case newCase = new Case(_admin, _stages);
+        cases[_caseID] = CaseData(address(newCase), _caseID, deploymentDate, true);
+        caseIDs.push(_caseID);
+
         emit CaseDeployed(_caseID, address(newCase), deploymentDate);
     }
 
@@ -69,6 +97,8 @@ contract CaseFactory {
         require(cases[_caseID].caseID != 0, "Case with this ID does not exist");
         require(cases[_caseID].active == true, "Case is already disabled");
         cases[_caseID].active = false;
+
+        emit CaseDisabled(_caseID);
     }
 
     /**
@@ -79,6 +109,24 @@ contract CaseFactory {
         require(cases[_caseID].caseID != 0, "Case with this ID does not exist");
         require(cases[_caseID].active == false, "Case is already enabled");
         cases[_caseID].active = true;
+
+        emit CaseEnabled(_caseID);
+    }
+
+    /**
+     * @dev Get all stages used when deploying a case.
+     * @return The array of stage names.
+     */
+    function getCaseStages() public view returns (string[] memory) {
+        return evidenceStages;
+    }
+
+    /**
+     * @dev Get all case IDs used when deploying a case.
+     * @return The array of case IDS.
+     */
+    function getCaseIDs() public view returns (uint256[] memory) {
+        return caseIDs;
     }
 
     /**

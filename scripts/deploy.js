@@ -9,11 +9,24 @@ const hre = require("hardhat");
 async function main() {
   
 
-  this.contract = await hre.ethers.deployContract("AdminContract");
-  await this.contract.waitForDeployment();
+  // Simulating stage names
+  const stages = [
+    'Identification',
+    'Collection',
+    'Acquisition',
+    'Preservation',
+    'Analysis',
+    'Presentation',
+    'Archiving',
+  ];
+
+  const [owner] = await hre.ethers.getSigners()
+  this.contract = await hre.ethers.getContractFactory('Case');
+  this.contract = await this.contract.deploy(owner.address, stages);
+  await this.contract.waitForDeployment()
 
   console.log(
-    `contractdeployed to ${this.contract.target}`
+    `contract deployed to ${this.contract.target}`
   )
 }
 

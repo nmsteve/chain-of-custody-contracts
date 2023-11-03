@@ -30,13 +30,30 @@ describe('CaseFactory contract', function () {
         expect(await caseFactory.authorizedUsers(authorizedUser1.address)).to.equal(false);
     });
 
+    it('Should set the stages for use when deploying a case', async () => {
+        const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
+        
+        // Simulating stage names
+        const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
+
+        await caseFactory.setCaseStages(stages);
+
+        // Get the set stages
+        const retrievedStages = await caseFactory.getCaseStages();
+
+        // Compare set stages with the retrieved stages
+        expect(retrievedStages).to.eql(stages);
+    });
+
     it('should deploy a new casex successfully', async function () {
         const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
+        // Simulating stage names
+        const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
 
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, stages);
 
         const caseData = await caseFactory.cases(caseID);
         expect(caseData.caseID).to.equal(caseID);
@@ -47,31 +64,40 @@ describe('CaseFactory contract', function () {
     it('should not deploy a casex with an existing casex ID', async function () {
         const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
 
+        // Simulating stage names
+        const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
+
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, stages);
 
         // Attempt to deploy a casex with the same ID
-        await expect(caseFactory.deployCase(caseID, owner.address)).to.be.revertedWith('Case with this ID already exists');
+        await expect(caseFactory.deployCase(caseID, owner.address, stages)).to.be.revertedWith('Case with this ID already exists');
     });
 
     it('should not deploy a casex as an unauthorized user', async function () {
-        const { caseFactory, owner,addr1 } = await loadFixture(deploy);
+        const { caseFactory, owner, addr1 } = await loadFixture(deploy);
+        
+        // Simulating stage names
+        const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
 
         const caseID = 1;
 
         // Attempt to deploy a casex without being an authorized user
-        await expect(caseFactory.connect(addr1).deployCase(caseID, owner.address)).to.be.revertedWith('Not authorized to deploy the chain of custody');
+        await expect(caseFactory.connect(addr1).deployCase(caseID, owner.address, stages)).to.be.revertedWith('Not authorized to deploy the chain of custody');
     });
 
     it('should enable a casex successfully', async function () {
         const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
 
+        // Simulating stage names
+        const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
+
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, stages );
 
         // Attempt to enable the casex
         await caseFactory.disableCase(caseID);
@@ -83,11 +109,12 @@ describe('CaseFactory contract', function () {
 
     it('should not enable an already enabled casex', async function () {
         const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
-
+        // Simulating stage names
+        const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, stages);
 
         
         // Attempt to enable the casex again
@@ -96,11 +123,12 @@ describe('CaseFactory contract', function () {
 
     it('should disable a casex successfully', async function () {
         const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
-
+        // Simulating stage names
+        const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, stages);
 
         
         // Disable the casex
@@ -112,11 +140,12 @@ describe('CaseFactory contract', function () {
 
     it('should not disable an already disabled casex', async function () {
         const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
-
+        // Simulating stage names
+        const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, stages);
 
         // Disable the casex
         await caseFactory.disableCase(caseID);
@@ -146,11 +175,12 @@ describe('CaseFactory contract', function () {
 
     it('should get casex status', async function () {
         const { caseFactory, owner } = await loadFixture(deploy);
-
+        // Simulating stage names
+        const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, stages);
 
         let caseStatus = await caseFactory.getCaseStatus(caseID);
         expect(caseStatus).to.equal(true);
@@ -167,9 +197,11 @@ describe('CaseFactory contract', function () {
         // Deploy five cases
         const numCases = 5;
         const caseData = [];
+        // Simulating stage names
+        const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
 
         for (let i = 1; i <= numCases; i++) {
-            const tx = await caseFactory.deployCase(i, owner.address);
+            const tx = await caseFactory.deployCase(i, owner.address, stages);
             await tx.wait(1)
             const casex = await caseFactory.cases(i);
             caseData.push(casex);
