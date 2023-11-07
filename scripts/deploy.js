@@ -21,8 +21,8 @@ async function main() {
   ];
 
   const [owner] = await hre.ethers.getSigners()
-  this.contract = await hre.ethers.getContractFactory('Case');
-  this.contract = await this.contract.deploy(owner.address, stages);
+  this.contract = await hre.ethers.getContractFactory('CaseFactory');
+  this.contract = await this.contract.deploy();
   await this.contract.waitForDeployment()
 
   console.log(
