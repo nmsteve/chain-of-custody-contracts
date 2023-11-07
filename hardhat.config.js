@@ -13,17 +13,18 @@ task('printPrivateKeys', 'Print the top 10 private keys from the mnemonic')
     const hdNode = ethers.HDNodeWallet.fromPhrase(mnemonic);
 
     for (let i = 0; i < 10; i++) {
-      const wallet = hdNode.derivePath(`m/44'/60'/0'/0/${i}`);
+      const wallet = hdNode.deriveChild(i)
       const privateKey = wallet.privateKey;
       console.log(privateKey)
       const address = wallet.address;
+      console.log(address)
       wallets.push({ privateKey, address });
     }
 
-    console.log('Top 10 Private Keys:');
-    wallets.forEach((privateKey, index) => {
-      console.log(`KEY_${index + 1}=${privateKey}`);
-    });
+    // console.log('Top 10 Private Keys:');
+    // wallets.forEach((privateKey, index) => {
+    //   console.log(`KEY_${index + 1}=${privateKey}`);
+    // });
   });
 
 
