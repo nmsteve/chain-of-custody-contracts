@@ -13,11 +13,11 @@ To install the dependencies, clone the repository and install the required packa
 
 1. Clone the repository using Git:
    ```sh
-   git clone https://github.com/nmsteve/dc-contracts
+   gh repo clone nmsteve/chain-of-custody-contracts
    ```
    or using the GitHub CLI (if you have it installed):
    ```sh
-   gh repo clone nmsteve/dc-contracts
+   gh repo clone nmsteve/chain-of-custody-contracts
    ```
 
 2. Install dependencies using Yarn:
