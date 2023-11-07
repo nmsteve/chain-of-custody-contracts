@@ -195,7 +195,7 @@ contract Case {
      * @param _itemNum The index of the evidence item.
      * @return id , name , addTime , stageCount, allStages details of all stages for the evidence item.
      */
-    function getAllEnexvidenceItemDetails(uint _itemNum) public view returns (uint256 id, string memory name, uint addTime, uint stageCount, StageDetails[] memory allStages) {
+    function getAllEvidenceItemDetails(uint _itemNum) public view returns (uint256 id, string memory name, uint addTime, uint stageCount, StageDetails[] memory allStages) {
         require(evidenceItems[_itemNum].id != 0, "Evidence item with this ID does not exist");
         EvidenceItem storage e = evidenceItems[_itemNum];
         id = e.id;
