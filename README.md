@@ -13,7 +13,7 @@ To install the dependencies, clone the repository and install the required packa
 
 1. Clone the repository using Git:
    ```sh
-   gh repo clone nmsteve/chain-of-custody-contracts
+   gh repo clone https://github.com/nmsteve/chain-of-custody-contracts.git
    ```
    or using the GitHub CLI (if you have it installed):
    ```sh
