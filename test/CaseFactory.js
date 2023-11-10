@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
-describe.only('CaseFactory contract', function () {
+describe('CaseFactory contract', function () {
     let owner, authorizedUser1, authorizedUser2, addr1, addr2, caseFactory;
 
     async function deploy() {
@@ -52,8 +52,8 @@ describe.only('CaseFactory contract', function () {
 
         const caseID = 1;
 
-        await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        
+        await caseFactory.deployCase(caseID, owner.address, authorizedUser1.address);
 
         const caseData = await caseFactory.cases(caseID);
         expect(caseData.caseID).to.equal(caseID);
@@ -70,10 +70,10 @@ describe.only('CaseFactory contract', function () {
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, authorizedUser1.address);
 
         // Attempt to deploy a casex with the same ID
-        await expect(caseFactory.deployCase(caseID, owner.address)).to.be.revertedWith('Case with this ID already exists');
+        await expect(caseFactory.deployCase(caseID, owner.address, authorizedUser1.address)).to.be.revertedWith('Case with this ID already exists');
     });
 
     it('should not deploy a casex as an unauthorized user', async function () {
@@ -85,7 +85,7 @@ describe.only('CaseFactory contract', function () {
         const caseID = 1;
 
         // Attempt to deploy a casex without being an authorized user
-        await expect(caseFactory.connect(addr1).deployCase(caseID, owner.address)).to.be.revertedWith('Not authorized to deploy the chain of custody');
+        await expect(caseFactory.connect(addr1).deployCase(caseID, owner.address, authorizedUser1.address)).to.be.revertedWith('Not authorized to deploy the chain of custody');
     });
 
     it('should enable a casex successfully', async function () {
@@ -97,7 +97,7 @@ describe.only('CaseFactory contract', function () {
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, authorizedUser1.address);
 
         // Attempt to enable the casex
         await caseFactory.disableCase(caseID);
@@ -114,7 +114,7 @@ describe.only('CaseFactory contract', function () {
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, authorizedUser1.address);
 
         
         // Attempt to enable the casex again
@@ -124,11 +124,11 @@ describe.only('CaseFactory contract', function () {
     it('should disable a casex successfully', async function () {
         const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
         // Simulating stage names
-        const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
+        const stages = ['Stage 1', 'Sta ge 2', 'Stage 3'];
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, authorizedUser1.address);
 
         
         // Disable the casex
@@ -145,7 +145,7 @@ describe.only('CaseFactory contract', function () {
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, authorizedUser1.address);
 
         // Disable the casex
         await caseFactory.disableCase(caseID);
@@ -180,7 +180,7 @@ describe.only('CaseFactory contract', function () {
         const caseID = 1;
 
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
-        await caseFactory.deployCase(caseID, owner.address);
+        await caseFactory.deployCase(caseID, owner.address, authorizedUser1.address);
 
         let caseStatus = await caseFactory.getCaseStatus(caseID);
         expect(caseStatus).to.equal(true);
@@ -192,7 +192,7 @@ describe.only('CaseFactory contract', function () {
     });
 
     it('should get all deployed cases and print their data', async function () {
-        const { caseFactory, owner } = await loadFixture(deploy);
+        const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
 
         // Deploy five cases
         const numCases = 5;
@@ -201,7 +201,7 @@ describe.only('CaseFactory contract', function () {
         const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
 
         for (let i = 1; i <= numCases; i++) {
-            const tx = await caseFactory.deployCase(i, owner.address);
+            const tx = await caseFactory.deployCase(i, owner.address, authorizedUser1.address);
             await tx.wait(1)
             const casex = await caseFactory.cases(i);
             caseData.push(casex);

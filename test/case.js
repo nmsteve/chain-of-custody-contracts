@@ -3,7 +3,7 @@ const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
 
-describe('Case contract', function () {
+describe.only('Case contract', function () {
 
     async function deploy() {
         const [owner, authorizedUser1, authorizedUser2, addr1, addr2, ...addrs] = await ethers.getSigners();
@@ -19,7 +19,7 @@ describe('Case contract', function () {
         ];
         // Deploy the contract
         let EvidenceChainOfCustody = await ethers.getContractFactory('Case');
-        let casex = await EvidenceChainOfCustody.deploy(owner.address, stages);
+        let casex = await EvidenceChainOfCustody.deploy(owner.address, authorizedUser1.address, stages);
         //await casex.deployed();
         return { owner, authorizedUser1, authorizedUser2, addr1, addr2, casex }
     };
@@ -146,14 +146,14 @@ describe('Case contract', function () {
         });
 
         it('should not update stage details form an unauthorized user', async function () {
-            const { casex, authorizedUser1 } = await loadFixture(deploy)
+            const { casex, authorizedUser1, authorizedUser2 } = await loadFixture(deploy)
 
             const evidenceId = 1;
             const stageId = 0;
             const newDetails = 'Updated Stage Details';
 
             // Attempt to update stage details with an unauthorized user
-            await expect(casex.connect(authorizedUser1).addStageDetails(evidenceId, stageId, newDetails))
+            await expect(casex.connect(authorizedUser2).addStageDetails(evidenceId, stageId, newDetails))
                 .to.be.revertedWith("Not authorized");
         });
 

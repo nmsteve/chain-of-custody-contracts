@@ -79,10 +79,10 @@ contract CaseFactory {
      * @dev Deploy a new case contract.
      * @param _caseID The ID of the new case.
      */
-    function deployCase(uint256 _caseID, address _admin) public onlyAuthorized {
+    function deployCase(uint256 _caseID, address _admin, address _deployer) public onlyAuthorized {
         require(cases[_caseID].caseID == 0, "Case with this ID already exists");
         uint256 deploymentDate = block.timestamp;
-        Case newCase = new Case(_admin, evidenceStages);
+        Case newCase = new Case(_admin, _deployer, evidenceStages);
         cases[_caseID] = CaseData(address(newCase), _caseID, deploymentDate, true);
         caseIDs.push(_caseID);
 

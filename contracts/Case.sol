@@ -57,9 +57,9 @@ contract Case {
         _;
     }
 
-    constructor(address _admin, string[] memory _stages) {
+    constructor(address _admin, address _deployer, string[] memory _stages) {
         admin = _admin;
-        authorizedAddresses[msg.sender] = true;
+        authorizedAddresses[_deployer] = true;
         stageNames = _stages;
     }
 
