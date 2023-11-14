@@ -2,8 +2,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
-
-describe.only('Case contract', function () {
+describe('Case contract', function () {
 
     async function deploy() {
         const [owner, authorizedUser1, authorizedUser2, addr1, addr2, ...addrs] = await ethers.getSigners();
@@ -126,7 +125,7 @@ describe.only('Case contract', function () {
 
             // Update stage details
             const updatedDetails = 'Updated details for the first stage';
-            await casex.addStageDetails(0, 0, updatedDetails);
+            await casex.updateStageDetails(0, 0, updatedDetails);
 
             // Get updated evidence stage details
             const updatedStageDetails = await casex.getStageDetails(0, 0);
@@ -177,6 +176,24 @@ describe.only('Case contract', function () {
             expect(result.allStages.length).to.equal(1); // Ensure the correct number of stages is returned
             expect(result.allStages[0].stageName).to.equal('Identification'); // Check the stage name
             expect(result.allStages[0].stageDetails).to.equal('Details for Stage One'); // Check the stage details
+        });
+
+        it("should get the update time of a specific stage", async () => {
+            const { casex } = await loadFixture(deploy)
+
+            // Add an evidence item
+            await casex.addEvidenceItem(1, "Sample Item");
+
+            // Add stage details
+            const stageIndex = 0;
+            const stageDetails = "Sample details";
+            await casex.addStageDetails(0, stageIndex, stageDetails);
+
+            // Get the update time
+            const updateTime = await casex.getStageUpdateTime(0, stageIndex);
+
+            // Check if the update time is greater than zero
+            expect(updateTime).to.be.gt(0);
         });
 
         it("should retrieve all evidence items", async () => {
@@ -243,7 +260,24 @@ describe.only('Case contract', function () {
             
         });
 
+        it('should add stage details only once', async function () {
 
+            const { casex, authorizedUser1 } = await loadFixture(deploy);
+            // Add an evidence item
+            await casex.addEvidenceItem(1, 'Sample Item');
+
+            // Add stage details for the first time
+            await casex.addStageDetails(0, 0, 'First details');
+
+            // Try adding stage details again for the same stage, should revert
+            await expect(casex.addStageDetails(0, 0, 'Second details')).to.be.revertedWith(
+                'Stage detail already exists'
+            );
+
+            // Ensure that the stage details are correct
+            const stageDetails = await casex.getStageDetails(0, 0);
+            expect(stageDetails.stageDetails).to.equal('First details');
+        });
     });
 
     describe(`Authorize Oparations`, function () {
