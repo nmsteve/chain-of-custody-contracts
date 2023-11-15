@@ -8,6 +8,7 @@ contract Accounts {
         address userAddress;
         string passwordHash;
         bool isActive;
+        uint256 lastLogin;
     }
 
     mapping(uint256 => User) public users;
@@ -16,6 +17,7 @@ contract Accounts {
     event UserCreated(uint256 userId, address userAddress);
     event UserUpdated(uint256 userId, string newPasswordHash);
     event UserStateSet(bool userState);
+    event UserLogin(uint256 userId, uint256 lastLogin );
 
     constructor() {
         admin = msg.sender; // Initialize the admin as the contract creator
@@ -41,7 +43,7 @@ contract Accounts {
             "Password hash cannot be empty"
         );
 
-        users[nextUserId] = User(_userAddress, _passwordHash, true);
+        users[nextUserId] = User(_userAddress, _passwordHash, true,0);
         emit UserCreated(nextUserId, _userAddress);
         nextUserId++;
     }
@@ -58,6 +60,18 @@ contract Accounts {
         User storage user = users[_userId];
         return (user.userAddress, user.passwordHash, user.isActive);
     }
+
+    /**
+     * @dev Record a login for the user with the provided ID.
+     * @param _userId The ID of the user.
+     */
+    function recordLogin(uint256 _userId) public onlyAdmin{
+        require( _userId < nextUserId, "User does not exist");
+        User storage user = users[_userId];
+        user.lastLogin = block.timestamp;
+        emit UserLogin(_userId, user.lastLogin);
+    }
+
 
     /**
      * @dev set a user state to active or inactive.

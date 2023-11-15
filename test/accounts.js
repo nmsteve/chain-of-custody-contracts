@@ -140,7 +140,7 @@ describe.only('Contract', function () {
 
     });
 
-    describe.only('get all users', function () {
+    describe('get all users', function () {
 
         it("should return empty arrays when no users are added", async () => {
             const userAddresses = await accountsContract.getAllUsers();
@@ -162,7 +162,42 @@ describe.only('Contract', function () {
         });
 
     })
+    
+    describe.only('record LogIn', function () {
+        it('should record a login by admin', async function () {
 
+            // user Id
+            const userId = 0; 
+
+            // Add a user
+            await accountsContract.addUser(user1.address, 'PasswordHash');
+
+            // Set up the admin signer
+            const adminSigner = accountsContract.connect(admin);
+
+            // Call the recordLogin function as admin
+            const tx = await adminSigner.recordLogin(userId);
+
+            // Wait for the transaction to be mined
+            await tx.wait();
+
+            // Check if the UserLogin event was emitted
+            const events = await accountsContract.queryFilter('UserLogin', tx.blockNumber);
+            expect(events.length).to.equal(1);
+
+            // Check if the emitted event has the correct values
+            const loginEvent = events[0];
+            expect(loginEvent.args.userId).to.equal(userId);
+        });
+
+        it('should not allow non-admin to record a login', async function () {
+            const userId = 1; // user ID
+            const nonAdmin = accountsContract.connect(user1);
+
+            // Try to call recordLogin as non-admin
+            await expect(nonAdmin.recordLogin(userId)).to.be.revertedWith('Only admin can perform this action');
+        });
+    })
 
     describe('setUserState', () => {
 
