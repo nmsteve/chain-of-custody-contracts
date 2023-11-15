@@ -163,7 +163,7 @@ describe.only('Contract', function () {
 
     })
     
-    describe.only('record LogIn', function () {
+    describe('record LogIn', function () {
         it('should record a login by admin', async function () {
 
             // user Id
@@ -197,6 +197,18 @@ describe.only('Contract', function () {
             // Try to call recordLogin as non-admin
             await expect(nonAdmin.recordLogin(userId)).to.be.revertedWith('Only admin can perform this action');
         });
+
+        it('should revert if user does not exist', async function () {
+
+            const nonExistentUserId = 999; // Replace with a non-existent user ID
+            // Add a user
+            await accountsContract.addUser(user1.address, 'PasswordHash');
+            // Set up the admin signer
+            const adminSigner = accountsContract.connect(admin);
+            // Try to call recordLogin with a non-existent user ID
+            await expect(adminSigner.recordLogin(nonExistentUserId)).to.be.revertedWith('User does not exist');
+        });
+
     })
 
     describe('setUserState', () => {
