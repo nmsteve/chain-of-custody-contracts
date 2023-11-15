@@ -269,5 +269,30 @@ describe.only('Contract', function () {
 
     });
 
+    describe(' update admin', () => {
+        it("should allow the admin to be updated", async function () {
+            await accountsContract.updateAdmin(addr1.address);
+
+            const updatedAdmin = await accountsContract.admin();
+            console.log(updatedAdmin)
+            expect(updatedAdmin).to.equal(addr1.address);
+        });
+
+        it("should revert if a non-admin tries to update the admin", async function () {
+            
+
+            await expect(
+                accountsContract.connect(user1).updateAdmin(addr1.address)
+            ).to.be.revertedWith("Only admin can perform this action");
+        });
+
+        it("should revert if the new admin address is invalid", async function () {
+            await expect(
+                accountsContract.updateAdmin(ethers.ZeroAddress)
+            ).to.be.revertedWith("Invalid admin address");
+        });
+    });
+
+
 
 });

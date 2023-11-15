@@ -17,7 +17,8 @@ contract Accounts {
     event UserCreated(uint256 userId, address userAddress);
     event UserUpdated(uint256 userId, string newPasswordHash);
     event UserStateSet(bool userState);
-    event UserLogin(uint256 userId, uint256 lastLogin );
+    event UserLogin(uint256 userId, uint256 lastLogin);
+    event AdminUpdated( address);
 
     constructor() {
         admin = msg.sender; // Initialize the admin as the contract creator
@@ -28,6 +29,7 @@ contract Accounts {
         _;
     }
 
+   
     /**
      * @dev Add a new user with the provided address and password hash.
      * @param _userAddress The user's Ethereum address.
@@ -43,7 +45,7 @@ contract Accounts {
             "Password hash cannot be empty"
         );
 
-        users[nextUserId] = User(_userAddress, _passwordHash, true,0);
+        users[nextUserId] = User(_userAddress, _passwordHash, true, 0);
         emit UserCreated(nextUserId, _userAddress);
         nextUserId++;
     }
@@ -65,13 +67,12 @@ contract Accounts {
      * @dev Record a login for the user with the provided ID.
      * @param _userId The ID of the user.
      */
-    function recordLogin(uint256 _userId) public onlyAdmin{
-        require( _userId < nextUserId, "User does not exist");
+    function recordLogin(uint256 _userId) public onlyAdmin {
+        require(_userId < nextUserId, "User does not exist");
         User storage user = users[_userId];
         user.lastLogin = block.timestamp;
         emit UserLogin(_userId, user.lastLogin);
     }
-
 
     /**
      * @dev set a user state to active or inactive.
@@ -79,7 +80,7 @@ contract Accounts {
      * @param _state The state to set  true or false
      */
     function setUserState(uint256 _userId, bool _state) public onlyAdmin {
-        require( _userId < nextUserId, "User does not exist");
+        require(_userId < nextUserId, "User does not exist");
         User storage user = users[_userId];
         user.isActive = _state;
         emit UserStateSet(_state);
@@ -94,7 +95,7 @@ contract Accounts {
         uint256 _userId,
         string memory _newPasswordHash
     ) public onlyAdmin {
-        require( _userId < nextUserId, "User does not exist");
+        require(_userId < nextUserId, "User does not exist");
         require(
             bytes(_newPasswordHash).length > 0,
             "Password hash cannot be empty"
@@ -110,19 +111,24 @@ contract Accounts {
      * @dev Get all user IDs and addresses.
      * @return Arrays of user addresses.
      */
-    function getAllUsers()
-        public
-        view
-        returns (address[] memory)
-    {
-       
+    function getAllUsers() public view returns (address[] memory) {
         address[] memory userAddresses = new address[](nextUserId);
 
         for (uint256 i = 0; i < nextUserId; i++) {
-          
             userAddresses[i] = users[i].userAddress;
         }
 
         return (userAddresses);
     }
+
+     /**
+     * @dev Update the contract admin.
+     * @param _newAdmin The address of the new admin.
+     */
+    function updateAdmin(address _newAdmin) public onlyAdmin {
+        require(_newAdmin != address(0), "Invalid admin address");
+        admin = _newAdmin;
+        emit AdminUpdated(_newAdmin);
+    }
+
 }
