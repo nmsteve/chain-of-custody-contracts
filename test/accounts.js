@@ -2,6 +2,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
+
 describe.only('Contract', function () {
     let accountsContract;
     let admin;
@@ -163,53 +164,29 @@ describe.only('Contract', function () {
 
     })
     
-    describe('record LogIn', function () {
-        it('should record a login by admin', async function () {
+    describe.only('User Login', () => {
+        it('should record login for the user', async () => {
+            await accountsContract.addUser(admin.address, 'passwordHash');
 
-            // user Id
-            const userId = 0; 
+            expect(await accountsContract.login(0)).to.emit(' UserLogin');
 
-            // Add a user
-            await accountsContract.addUser(user1.address, 'PasswordHash');
-
-            // Set up the admin signer
-            const adminSigner = accountsContract.connect(admin);
-
-            // Call the recordLogin function as admin
-            const tx = await adminSigner.recordLogin(userId);
-
-            // Wait for the transaction to be mined
-            await tx.wait();
-
-            // Check if the UserLogin event was emitted
-            const events = await accountsContract.queryFilter('UserLogin', tx.blockNumber);
-            expect(events.length).to.equal(1);
-
-            // Check if the emitted event has the correct values
-            const loginEvent = events[0];
-            expect(loginEvent.args.userId).to.equal(userId);
         });
 
-        it('should not allow non-admin to record a login', async function () {
-            const userId = 1; // user ID
-            const nonAdmin = accountsContract.connect(user1);
-
-            // Try to call recordLogin as non-admin
-            await expect(nonAdmin.recordLogin(userId)).to.be.revertedWith('Only admin can perform this action');
+        it('should revert if user does not exist', async () => {
+            await expect(
+                accountsContract.login(1)).to.be.revertedWith(
+                'User does not exist'
+            );
         });
 
-        it('should revert if user does not exist', async function () {
+        it('should revert if not authorized to log in for this user', async () => {
+            await accountsContract.addUser(admin.address, 'passwordHash');
 
-            const nonExistentUserId = 999; // Replace with a non-existent user ID
-            // Add a user
-            await accountsContract.addUser(user1.address, 'PasswordHash');
-            // Set up the admin signer
-            const adminSigner = accountsContract.connect(admin);
-            // Try to call recordLogin with a non-existent user ID
-            await expect(adminSigner.recordLogin(nonExistentUserId)).to.be.revertedWith('User does not exist');
+            await expect(accountsContract.connect(user1).login(0)).to.be.revertedWith(
+                'Not authorized to record login for this user'
+            )
         });
-
-    })
+    });
 
     describe('setUserState', () => {
 
@@ -292,7 +269,6 @@ describe.only('Contract', function () {
             ).to.be.revertedWith("Invalid admin address");
         });
     });
-
 
 
 });

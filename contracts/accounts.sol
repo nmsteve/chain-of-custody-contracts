@@ -18,7 +18,7 @@ contract Accounts {
     event UserUpdated(uint256 userId, string newPasswordHash);
     event UserStateSet(bool userState);
     event UserLogin(uint256 userId, uint256 lastLogin);
-    event AdminUpdated( address);
+    event AdminUpdated(address);
 
     constructor() {
         admin = msg.sender; // Initialize the admin as the contract creator
@@ -29,7 +29,6 @@ contract Accounts {
         _;
     }
 
-   
     /**
      * @dev Add a new user with the provided address and password hash.
      * @param _userAddress The user's Ethereum address.
@@ -67,8 +66,13 @@ contract Accounts {
      * @dev Record a login for the user with the provided ID.
      * @param _userId The ID of the user.
      */
-    function recordLogin(uint256 _userId) public onlyAdmin {
+    function login(uint256 _userId) public {
         require(_userId < nextUserId, "User does not exist");
+        require(
+            msg.sender == users[_userId].userAddress,
+            "Not authorized to record login for this user"
+        );
+
         User storage user = users[_userId];
         user.lastLogin = block.timestamp;
         emit UserLogin(_userId, user.lastLogin);
@@ -121,7 +125,7 @@ contract Accounts {
         return (userAddresses);
     }
 
-     /**
+    /**
      * @dev Update the contract admin.
      * @param _newAdmin The address of the new admin.
      */
@@ -130,5 +134,4 @@ contract Accounts {
         admin = _newAdmin;
         emit AdminUpdated(_newAdmin);
     }
-
 }
