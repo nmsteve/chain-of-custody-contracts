@@ -3,7 +3,7 @@ const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
 
-describe.only('Contract', function () {
+describe('Contract', function () {
     let accountsContract;
     let admin;
 
@@ -164,7 +164,7 @@ describe.only('Contract', function () {
 
     })
     
-    describe.only('User Login', () => {
+    describe('User Login', () => {
         it('should record login for the user', async () => {
             await accountsContract.addUser(admin.address, 'passwordHash');
 

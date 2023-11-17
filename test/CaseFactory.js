@@ -1,8 +1,9 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
+const { N } = require('ethers');
 
-describe('CaseFactory contract', function () {
+describe.only('CaseFactory contract', function () {
     let owner, authorizedUser1, authorizedUser2, addr1, addr2, caseFactory;
 
     async function deploy() {
@@ -32,7 +33,7 @@ describe('CaseFactory contract', function () {
 
     it('Should set the stages for use when deploying a case', async () => {
         const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
-        
+
         // Simulating stage names
         const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
 
@@ -52,7 +53,7 @@ describe('CaseFactory contract', function () {
 
         const caseID = 1;
 
-        
+
         await caseFactory.deployCase(caseID, owner.address, authorizedUser1.address);
 
         const caseData = await caseFactory.cases(caseID);
@@ -78,7 +79,7 @@ describe('CaseFactory contract', function () {
 
     it('should not deploy a casex as an unauthorized user', async function () {
         const { caseFactory, owner, addr1 } = await loadFixture(deploy);
-        
+
         // Simulating stage names
         const stages = ['Stage 1', 'Stage 2', 'Stage 3'];
 
@@ -116,7 +117,7 @@ describe('CaseFactory contract', function () {
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
         await caseFactory.deployCase(caseID, owner.address, authorizedUser1.address);
 
-        
+
         // Attempt to enable the casex again
         await expect(caseFactory.enableCase(caseID)).to.be.revertedWith('Case is already enabled');
     });
@@ -130,7 +131,7 @@ describe('CaseFactory contract', function () {
         await caseFactory.addAuthorizedUser(authorizedUser1.address);
         await caseFactory.deployCase(caseID, owner.address, authorizedUser1.address);
 
-        
+
         // Disable the casex
         await caseFactory.disableCase(caseID);
 
@@ -155,7 +156,7 @@ describe('CaseFactory contract', function () {
     });
 
     it('should not enable a casex as an unauthorized user', async function () {
-        const { caseFactory,addr1 } = await loadFixture(deploy);
+        const { caseFactory, addr1 } = await loadFixture(deploy);
 
         const caseID = 1;
 
@@ -164,7 +165,7 @@ describe('CaseFactory contract', function () {
     });
 
     it('should not disable a casex as an unauthorized user', async function () {
-        
+
         const { caseFactory, addr2 } = await loadFixture(deploy);
 
         const caseID = 1;
@@ -221,6 +222,32 @@ describe('CaseFactory contract', function () {
             //console.log(`| ${caseID.padEnd(7)} | ${caseAddress.padEnd(26)} |  | |`);
             console.log(`| ${caseID.padEnd(7)} | ${caseAddress.padEnd(26)} | ${deploymentDate.padEnd(15)} | ${isActive.padEnd(6)} |`);
         }
+    });
+
+    it("should allow admin to update the admin address", async function () {
+        const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
+
+        const newAdmin = authorizedUser1.address;
+
+        // Ensure the admin address is different before the update
+        const oldAdmin = await caseFactory.admin();
+        expect(oldAdmin).to.not.equal(newAdmin);
+
+        // Call the setAdmin function
+        await caseFactory.setAdmin(newAdmin);
+
+        // Verify that the admin address has been updated
+        const updatedAdmin = await caseFactory.admin();
+        expect(updatedAdmin).to.equal(newAdmin);
+    });
+
+    it("should revert if a non-admin tries to update the admin address", async function () {
+        const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
+
+        // Ensure the revert when a non-admin tries to update the admin address
+        await expect(caseFactory.connect(authorizedUser1).setAdmin(authorizedUser1.address)).to.be.revertedWith(
+            "Only admin can perform this action"
+        );
     });
 
 });

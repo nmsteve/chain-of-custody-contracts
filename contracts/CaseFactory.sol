@@ -30,6 +30,8 @@ contract CaseFactory {
     event AuthorizedUserAdded(address userAddress);
     event AuthorizedUserRemoved(address userAddress);
     event StagesSet(address admin, string[] stages);
+    event AdminUpdated(address newAdmin);
+
 
     constructor() {
         admin = msg.sender;
@@ -73,6 +75,16 @@ contract CaseFactory {
     function setCaseStages(string[] memory _stages) public onlyAdmin {
         evidenceStages = _stages;
          emit StagesSet(admin, _stages);
+    }
+
+    /**
+     * @dev Update the admin address.
+     * @param _newAdmin The address of the new admin.
+     */
+    function setAdmin(address _newAdmin) public onlyAdmin {
+        require(_newAdmin != address(0), "Invalid admin address");
+        admin = _newAdmin;
+        emit AdminUpdated(_newAdmin);
     }
 
     /**
