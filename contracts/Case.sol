@@ -21,11 +21,12 @@ contract Case {
     }
 
     mapping(uint => EvidenceItem) public evidenceItems;
-    uint public numEvidenceItems;
+    uint public evidenceItemsLength;
 
-    string[] public stageNames; // Mapping to store stage names
+    string[] public stageNames; // array to store stage names
 
     mapping(address => bool) public authorizedAddresses;
+    uint256[] public itemIds;
     address public admin;
 
     event EvidenceStageDetailsUpdated(
@@ -33,16 +34,12 @@ contract Case {
         uint8 stage,
         string newDetails
     );
-
+    event AdminUpdated(address newAdmin);
     event NewStageAdded(uint8 stage, string stageName);
-    event EvidenceItemAdded(
-        uint _numEvidenceItem,
-        uint256 id,
-        string name,
-        uint timeStamp
-    );
+    event EvidenceItemAdded(uint256 id, string name, uint timeStamp);
     event AddressEnabled(address enabledAddress); // Event for enabling an address
     event AddressDisabled(address disabledAddress);
+    event EvidenceItemUpdated(uint256 id, string name, uint timeStamp);
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Only admin can perform this action");
@@ -64,6 +61,16 @@ contract Case {
     }
 
     /**
+     * @dev Update the admin address.
+     * @param _newAdmin The address of the new admin.
+     */
+    function setAdmin(address _newAdmin) public onlyAdmin {
+        require(_newAdmin != address(0), "Invalid admin address");
+        admin = _newAdmin;
+        emit AdminUpdated(_newAdmin);
+    }
+
+    /**
      * @dev Add a new evidence item with the specified ID and name.
      * @param _id The ID of the evidence item.
      * @param _name The name of the evidence item.
@@ -72,33 +79,59 @@ contract Case {
         uint256 _id,
         string memory _name
     ) public onlyAuthorized {
-        uint evidenceItemNum = numEvidenceItems++;
-
-        EvidenceItem storage e = evidenceItems[evidenceItemNum];
+        require(
+            evidenceItems[_id].id == 0,
+            "Evidence item with this ID exists"
+        );
+        EvidenceItem storage e = evidenceItems[_id];
         e.id = _id;
         e.name = _name;
         e.addTime = block.timestamp;
+        evidenceItemsLength++;
+        itemIds.push(_id);
 
-        emit EvidenceItemAdded(evidenceItemNum, _id, _name, block.timestamp);
+        emit EvidenceItemAdded(_id, _name, block.timestamp);
+    }
+
+    /**
+     * @dev update an evidence item with the specified ID and name.
+     * @param _id The ID of the evidence item.
+     * @param _name The name of the evidence item.
+     */
+    function updateEvidenceItem(
+        uint256 _id,
+        string memory _name
+    ) public onlyAuthorized {
+        require(
+            evidenceItems[_id].id != 0,
+            "Evidence item with this ID does not exist"
+        );
+
+        EvidenceItem storage e = evidenceItems[_id];
+        e.id = _id;
+        e.name = _name;
+        uint updateTime = block.timestamp;
+
+        emit EvidenceItemUpdated(_id, _name, updateTime);
     }
 
     /**
      * @dev Update the details of a specific stage for an evidence item.
-     * @param _itemId The incremental id of the evidence item in this system
+     * @param _id The incremental id of the evidence item in this system
      * @param _stage The stage for which details are being updated.
      * @param _details The new details to be added.
      */
     function addStageDetails(
-        uint256 _itemId,
+        uint256 _id,
         uint8 _stage,
         string memory _details
     ) public onlyAuthorized {
         require(
-            evidenceItems[_itemId].id != 0,
+            evidenceItems[_id].id != 0,
             "Evidence item with this ID does not exist"
         );
 
-        EvidenceItem storage e = evidenceItems[_itemId];
+        EvidenceItem storage e = evidenceItems[_id];
 
         // Ensure that the stage detail for the given stage does not exist already
         require(
@@ -116,33 +149,33 @@ contract Case {
 
         e.stageCount++;
 
-        emit EvidenceStageDetailsUpdated(_itemId, _stage, _details);
+        emit EvidenceStageDetailsUpdated(_id, _stage, _details);
     }
 
     /**
      * @dev Update the details of a specific stage for an evidence item.
-     * @param _itemId The incremental id of the evidence item in this system
+     * @param _id The incremental id of the evidence item in this system
      * @param _stage The stage for which details are being updated.
      * @param _details The new details to be added.
      */
     function updateStageDetails(
-        uint256 _itemId,
+        uint256 _id,
         uint8 _stage,
         string memory _details
     ) public onlyAuthorized {
         require(
-            evidenceItems[_itemId].id != 0,
+            evidenceItems[_id].id != 0,
             "Evidence item with this ID does not exist"
         );
         string memory _stageName = stageNames[_stage];
 
-        EvidenceItem storage e = evidenceItems[_itemId];
+        EvidenceItem storage e = evidenceItems[_id];
         e.evidenceStageDetails[_stage] = StageDetails({
             stageName: _stageName,
             stageDetails: _details,
             updateTime: block.timestamp
         });
-        emit EvidenceStageDetailsUpdated(_itemId, _stage, _details);
+        emit EvidenceStageDetailsUpdated(_id, _stage, _details);
     }
 
     /**
@@ -164,38 +197,46 @@ contract Case {
     }
 
     /**
-     * @dev Get the names of all evidence stage
-     * @return array of  names of the stages.
+     * @dev Get all stage names.
+     * @return Array of stage names.
      */
     function getStageNames() public view returns (string[] memory) {
         return stageNames;
     }
 
     /**
+     * @dev Get all item Ids.
+     * @return Array of item Ids.
+     */
+    function getItemIds() public view returns (uint256[] memory) {
+        return itemIds;
+    }
+
+    /**
      * @dev Get the details of a specific stage for an evidence item.
-     * @param _itemNum The ID of the evidence item.
+     * @param _id The ID of the evidence item.
      * @param _stage The stage for which details are requested.
      * @return _stageDetails of the requested stage for the evidence item.
      */
     function getStageDetails(
-        uint _itemNum,
+        uint _id,
         uint _stage
     ) public view returns (StageDetails memory _stageDetails) {
-        EvidenceItem storage e = evidenceItems[_itemNum];
+        EvidenceItem storage e = evidenceItems[_id];
         return e.evidenceStageDetails[_stage];
     }
 
     /**
      * @dev Get the update time of a specific stage for an evidence item.
-     * @param _itemNum The ID of the evidence item.
+     * @param _id The ID of the evidence item.
      * @param _stage The stage for which the update time is requested.
      * @return The update time of the specified stage.
      */
     function getStageUpdateTime(
-        uint _itemNum,
+        uint _id,
         uint _stage
     ) public view returns (uint256) {
-        EvidenceItem storage e = evidenceItems[_itemNum];
+        EvidenceItem storage e = evidenceItems[_id];
         require(_stage < e.stageCount, "Invalid stage index");
 
         StageDetails storage stageDetails = e.evidenceStageDetails[_stage];
@@ -203,36 +244,49 @@ contract Case {
     }
 
     /**
-     * @dev Get all evidence items with their details.
-     * @return Arrays of IDs, names, add times for all evidence items.
+     * @dev Get evidence items with their details within a specified range.
+     * @param _startIndex The start index of the range.
+     * @param _endIndex The end index of the range.
+     * @return Arrays of IDs, names, add times, and stage counts for evidence items in the specified range.
      */
-    function getAllEvidenceItems()
+    function getEvidenceItemsInRange(
+        uint _startIndex,
+        uint _endIndex
+    )
         public
         view
         returns (uint[] memory, string[] memory, uint[] memory, uint[] memory)
     {
-        uint[] memory ids = new uint[](numEvidenceItems);
-        string[] memory names = new string[](numEvidenceItems);
-        uint[] memory addTimes = new uint[](numEvidenceItems);
-        uint[] memory stageCounts = new uint[](numEvidenceItems);
+        require(_startIndex < evidenceItemsLength, "Start index out of bounds");
 
-        for (uint i = 0; i < numEvidenceItems; i++) {
-            EvidenceItem storage e = evidenceItems[i];
-            ids[i] = e.id;
-            names[i] = e.name;
-            addTimes[i] = e.addTime;
-            stageCounts[i] = e.stageCount;
+        // Use _endIndex or evidenceItemsLength, whichever is smaller
+        uint endIndex = _endIndex < evidenceItemsLength
+            ? _endIndex
+            : evidenceItemsLength;
+
+        uint[] memory ids = new uint[](endIndex - _startIndex);
+        string[] memory names = new string[](endIndex - _startIndex);
+        uint[] memory addTimes = new uint[](endIndex - _startIndex);
+        uint[] memory stageCounts = new uint[](endIndex - _startIndex);
+
+        for (uint i = _startIndex; i < endIndex; i++) {
+            EvidenceItem storage e = evidenceItems[itemIds[i]];
+            ids[i - _startIndex] = e.id;
+            names[i - _startIndex] = e.name;
+            addTimes[i - _startIndex] = e.addTime;
+            stageCounts[i - _startIndex] = e.stageCount;
         }
+
         return (ids, names, addTimes, stageCounts);
     }
 
     /**
      * @dev Get all details for a specific evidence item.
-     * @param _itemNum The index of the evidence item.
+     * @param _id The index of the evidence item.
      * @return id , name , addTime , stageCount, allStages details of all stages for the evidence item.
      */
     function getAllEvidenceItemDetails(
-        uint _itemNum
+        uint _id
     )
         public
         view
@@ -245,10 +299,10 @@ contract Case {
         )
     {
         require(
-            evidenceItems[_itemNum].id != 0,
+            evidenceItems[_id].id != 0,
             "Evidence item with this ID does not exist"
         );
-        EvidenceItem storage e = evidenceItems[_itemNum];
+        EvidenceItem storage e = evidenceItems[_id];
         id = e.id;
         name = e.name;
         addTime = e.addTime;

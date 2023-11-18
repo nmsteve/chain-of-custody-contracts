@@ -3,7 +3,7 @@ const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { N } = require('ethers');
 
-describe.only('CaseFactory contract', function () {
+describe('CaseFactory contract', function () {
     let owner, authorizedUser1, authorizedUser2, addr1, addr2, caseFactory;
 
     async function deploy() {

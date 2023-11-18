@@ -3,7 +3,7 @@ const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
 
-describe('Case contract', function () {
+describe.only('Case contract', function () {
 
     async function deploy() {
         const [owner, authorizedUser1, authorizedUser2, addr1, addr2, ...addrs] = await ethers.getSigners();
@@ -24,11 +24,29 @@ describe('Case contract', function () {
         return { owner, authorizedUser1, authorizedUser2, addr1, addr2, casex }
     };
 
+    it("should allow admin to update the admin address", async function () {
+        const { casex, owner, authorizedUser1 } = await loadFixture(deploy);
+
+        const newAdmin = authorizedUser1.address;
+
+        // Ensure the admin address is different before the update
+        const oldAdmin = await casex.admin();
+        expect(oldAdmin).to.not.equal(newAdmin);
+
+        // Call the setAdmin function
+        await casex.setAdmin(newAdmin);
+
+        // Verify that the admin address has been updated
+        const updatedAdmin = await casex.admin();
+        expect(updatedAdmin).to.equal(newAdmin);
+    });
+
     describe('Stage Oparations', function () {
         it('should retrieve all stage names', async () => {
             const { casex } = await loadFixture(deploy)
             // Call the getStageNames function
             const stageNames = await casex.getStageNames();
+            //console.log(stageNames)
 
             // Perform assertions
             expect(stageNames).to.be.an('array'); // Check if it returns an array
@@ -37,8 +55,7 @@ describe('Case contract', function () {
         
     });
 
-    describe('Evidence Item Oparations', function () {
-
+    describe('EvidenceItem Items name and ID', function () {
         it('should add an evidence item', async function () {
 
             const { casex } = await loadFixture(deploy)
@@ -52,13 +69,59 @@ describe('Case contract', function () {
 
 
             //verify other details
-            const evidenceItem1 = await casex.evidenceItems(0)
-            const evidenceItem2 = await casex.evidenceItems(1)
+            const evidenceItem1 = await casex.evidenceItems(item1.id)
+            const evidenceItem2 = await casex.evidenceItems(item2.id)
             expect(evidenceItem1.id).to.be.eq(item1.id)
             expect(evidenceItem1.name).to.equal(item1.name);
             expect(evidenceItem2.id).to.be.eq(item2.id)
             expect(evidenceItem2.name).to.equal(item2.name);
         });
+
+        it('should revert when adding an evidence item with an existing ID', async function () {
+            const { casex } = await loadFixture(deploy);
+            const existingItemId = 1000;
+            const itemName = 'Existing Item';
+
+            // Add an evidence item with the existing ID
+            await casex.addEvidenceItem(existingItemId, itemName);
+
+            // Attempt to add another evidence item with the same ID (expect revert)
+            await expect(casex.addEvidenceItem(existingItemId, 'Another Item')).to.be.revertedWith('Evidence item with this ID exists');
+        });
+
+        it('should update an evidence item', async function () {
+            const { casex } = await loadFixture(deploy);
+            let item = { id: 2000, name: 'Original Item' };
+            let updatedName = 'Updated Item';
+
+            // Add the original evidence item
+            await casex.addEvidenceItem(item.id, item.name);
+
+            // Test updating an existing evidence item
+            await casex.updateEvidenceItem(item.id, updatedName);
+
+            // Verify that the evidence item is updated
+            const updatedItem = await casex.evidenceItems(item.id);
+            expect(updatedItem.id).to.be.eq(item.id);
+            expect(updatedItem.name).to.equal(updatedName);
+        });
+
+        it('should revert when updating a non-existent evidence item', async function () {
+            const { casex } = await loadFixture(deploy);
+            const nonExistentItemId = 999;
+            const updatedName = 'Updated Item';
+
+            // Test updating an evidence item that does not exist (expect revert)
+            await expect(casex.updateEvidenceItem(nonExistentItemId, updatedName)).to.be.revertedWith('Evidence item with this ID does not exist');
+        });
+
+
+
+    } )
+
+    describe('Evidence Item Stage details', function () {
+
+        
 
         it('Should add Stage Details to an evidence item', async function () {
 
@@ -78,24 +141,43 @@ describe('Case contract', function () {
             await casex.addEvidenceItem(evidenceItem.id, evidenceItem.name);
 
             // Update stage details
-            await casex.addStageDetails(0, 0, evidenceItem.stageDetails[1]);
-            await casex.addStageDetails(0, 1, evidenceItem.stageDetails[2]);
+            await casex.addStageDetails(evidenceItem.id, 0, evidenceItem.stageDetails[1]);
+            await casex.addStageDetails(evidenceItem.id, 1, evidenceItem.stageDetails[2]);
 
             // Get evidence details
-            const storedEvidenceItem = await casex.evidenceItems(0);
+            const storedEvidenceItem = await casex.evidenceItems(evidenceItem.id);
 
             expect(storedEvidenceItem.id).to.equal(evidenceItem.id);
             expect(storedEvidenceItem.name).to.equal(evidenceItem.name);
             expect(storedEvidenceItem.stageCount).to.equal(2);
 
             // Get evidence stage details
-            const stage1Details = await casex.getStageDetails(0, 0);
-            const stage2Details = await casex.getStageDetails(0, 1);
+            const stage1Details = await casex.getStageDetails(evidenceItem.id, 0);
+            const stage2Details = await casex.getStageDetails(evidenceItem.id, 1);
 
             expect(stage1Details.stageName).to.equal('Identification');
             expect(stage1Details.stageDetails).to.equal(evidenceItem.stageDetails[1]);
             expect(stage2Details.stageName).to.equal('Collection');
             expect(stage2Details.stageDetails).to.equal(evidenceItem.stageDetails[2]);
+        });
+
+        it('should add stage details only once', async function () {
+
+            const { casex, authorizedUser1 } = await loadFixture(deploy);
+            // Add an evidence item
+            await casex.addEvidenceItem(1, 'Sample Item');
+
+            // Add stage details for the first time
+            await casex.addStageDetails(1, 0, 'First details');
+
+            // Try adding stage details again for the same stage, should revert
+            await expect(casex.addStageDetails(1, 0, 'Second details')).to.be.revertedWith(
+                'Stage detail already exists'
+            );
+
+            // Ensure that the stage details are correct
+            const stageDetails = await casex.getStageDetails(1, 0);
+            expect(stageDetails.stageDetails).to.equal('First details');
         });
 
         it('Should update Stage Details for an evidence item', async function () {
@@ -114,11 +196,11 @@ describe('Case contract', function () {
             await casex.addEvidenceItem(evidenceItem.id, evidenceItem.name);
 
             // Update stage details
-            await casex.addStageDetails(0, 0, evidenceItem.stageDetails[1]);
-            await casex.addStageDetails(0, 1, evidenceItem.stageDetails[2]);
+            await casex.addStageDetails(evidenceItem.id, 0, evidenceItem.stageDetails[1]);
+            await casex.addStageDetails(evidenceItem.id, 1, evidenceItem.stageDetails[2]);
 
             // Get evidence details
-            const storedEvidenceItem = await casex.evidenceItems(0);
+            const storedEvidenceItem = await casex.evidenceItems(evidenceItem.id);
 
             expect(storedEvidenceItem.id).to.equal(evidenceItem.id);
             expect(storedEvidenceItem.name).to.equal(evidenceItem.name);
@@ -126,10 +208,10 @@ describe('Case contract', function () {
 
             // Update stage details
             const updatedDetails = 'Updated details for the first stage';
-            await casex.updateStageDetails(0, 0, updatedDetails);
+            await casex.updateStageDetails(evidenceItem.id, 0, updatedDetails);
 
             // Get updated evidence stage details
-            const updatedStageDetails = await casex.getStageDetails(0, 0);
+            const updatedStageDetails = await casex.getStageDetails(evidenceItem.id, 0);
             expect(updatedStageDetails.stageName).to.equal('Identification');
             expect(updatedStageDetails.stageDetails).to.equal(updatedDetails);
         });
@@ -156,51 +238,14 @@ describe('Case contract', function () {
             await expect(casex.connect(authorizedUser2).addStageDetails(evidenceId, stageId, newDetails))
                 .to.be.revertedWith("Not authorized");
         });
+      
+    });
 
-        it('Should get all details for a specific Evidence Item', async () => {
-            
-            const { casex } = await loadFixture(deploy)
-
-            // Add an evidence item
-            await casex.addEvidenceItem(1, 'Sample Item');
-
-            // Update the stage details
-            await casex.addStageDetails(0, 0, 'Details for Stage One');
-
-            const result = await casex.getAllEvidenceItemDetails(0);
-            console.log(result);
-
-            //Perform assertions as needed
-            expect(result.id).to.equal(1); // Adjust this based on the expected ID
-            expect(result.name).to.equal('Sample Item'); // Adjust this based on the expected name
-            expect(result.addTime).to.not.equal(0); // Adjust this based on the expected timestamp
-            expect(result.allStages.length).to.equal(1); // Ensure the correct number of stages is returned
-            expect(result.allStages[0].stageName).to.equal('Identification'); // Check the stage name
-            expect(result.allStages[0].stageDetails).to.equal('Details for Stage One'); // Check the stage details
-        });
-
-        it("should get the update time of a specific stage", async () => {
-            const { casex } = await loadFixture(deploy)
-
-            // Add an evidence item
-            await casex.addEvidenceItem(1, "Sample Item");
-
-            // Add stage details
-            const stageIndex = 0;
-            const stageDetails = "Sample details";
-            await casex.addStageDetails(0, stageIndex, stageDetails);
-
-            // Get the update time
-            const updateTime = await casex.getStageUpdateTime(0, stageIndex);
-
-            // Check if the update time is greater than zero
-            expect(updateTime).to.be.gt(0);
-        });
-
-        it("should retrieve all evidence items", async () => {
+    describe('Evidence Item Stage details get oporations', function () {
 
 
-            const { casex } = await loadFixture(deploy)
+        it("should get evidence items within a range", async () => {
+            const { casex } = await loadFixture(deploy);
 
             const itemDetails = [
                 { id: 1, name: "Item 1" },
@@ -213,26 +258,103 @@ describe('Case contract', function () {
             for (const item of itemDetails) {
                 await casex.addEvidenceItem(item.id, item.name);
             }
-        
-            const itemCount = 5; // Assuming you have added 5 items for testing
-            const expectedIds = [1, 2, 3, 4, 5]; // Example IDs
-            const expectedNames = ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"]; // Example names
 
-            const [ids, names, addTimes, stageCounts] = await casex.getAllEvidenceItems();
-            //console.log(ids,names,addTimes)
+            const startIndex = 1; // Start index of the range
+            const endIndex = 3; // End index of the range (you can adjust this value)
 
-            expect(ids.length).to.be.equal(itemCount)
+            const [ids, names, addTimes, stageCounts] = await casex.getEvidenceItemsInRange(startIndex, endIndex);
 
-            for (let i = 0; i < itemCount; i++) {
+            const expectedIds = [2, 3, 4]; // Example IDs within the specified range
+            const expectedNames = ["Item 2", "Item 3", "Item 4"]; // Example names within the specified range
+
+            expect(ids.length).to.be.equal(endIndex - startIndex);
+
+            for (let i = 0; i < endIndex - startIndex; i++) {
                 expect(ids[i]).to.be.equal(expectedIds[i]);
                 expect(names[i]).to.be.equal(expectedNames[i]);
-                expect(addTimes[i]*BigInt(1000)).to.be.lessThanOrEqual(Date.now())
-                expect(stageCounts[i]).to.be.equal(0)
-                
+                expect(addTimes[i] * BigInt(1000)).to.be.lessThanOrEqual(Date.now());
+                expect(stageCounts[i]).to.be.equal(0);
             }
         });
 
-        it('should log evidence details for all stages', async function () {
+        it("should revert when getting evidence items with invalid range", async () => {
+            const { casex } = await loadFixture(deploy);
+
+            const itemDetails = [
+                { id: 1, name: "Item 1" },
+                { id: 2, name: "Item 2" },
+                { id: 3, name: "Item 3" },
+                { id: 4, name: "Item 4" },
+                { id: 5, name: "Item 5" }
+            ];
+
+            for (const item of itemDetails) {
+                await casex.addEvidenceItem(item.id, item.name);
+            }
+
+            const invalidStartIndex = 10;
+            const invalidEndIndex = 1; // This should be less than the start index
+
+            await expect(casex.getEvidenceItemsInRange(invalidStartIndex, invalidEndIndex)).to.be.revertedWith(
+                "Start index out of bounds"
+            );
+        });
+
+        it("should get evidence items with endIndex greater than evidenceItemsLength", async () => {
+            const { casex } = await loadFixture(deploy);
+
+            const itemDetails = [
+                { id: 1, name: "Item 1" },
+                { id: 2, name: "Item 2" },
+                { id: 3, name: "Item 3" },
+                { id: 4, name: "Item 4" },
+                { id: 5, name: "Item 5" }
+            ];
+
+            for (const item of itemDetails) {
+                await casex.addEvidenceItem(item.id, item.name);
+            }
+
+            const _startIndex = 0;
+            const _endIndex = 10; // Assuming a value greater than evidenceItemsLength
+
+            const [ids, names, addTimes, stageCounts] = await casex.getEvidenceItemsInRange(_startIndex, _endIndex);
+
+            // Validate the fetched data
+            expect(ids.length).to.equal(itemDetails.length); // Ensure all items are fetched
+
+            for (let i = 0; i < itemDetails.length; i++) {
+                expect(ids[i]).to.equal(itemDetails[i].id);
+                expect(names[i]).to.equal(itemDetails[i].name);
+                expect(addTimes[i] * BigInt(1000)).to.be.lessThanOrEqual(Date.now());
+                expect(stageCounts[i]).to.equal(0);
+            }
+
+        });
+
+        it('Should get all details for a specific Evidence Item', async () => {
+
+            const { casex } = await loadFixture(deploy)
+
+            // Add an evidence item
+            await casex.addEvidenceItem(1, 'Sample Item');
+
+            // Update the stage details
+            await casex.addStageDetails(1, 0, 'Details for Stage One');
+
+            const result = await casex.getAllEvidenceItemDetails(1);
+            console.log(result);
+
+            //Perform assertions as needed
+            expect(result.id).to.equal(1); // Adjust this based on the expected ID
+            expect(result.name).to.equal('Sample Item'); // Adjust this based on the expected name
+            expect(result.addTime).to.not.equal(0); // Adjust this based on the expected timestamp
+            expect(result.allStages.length).to.equal(1); // Ensure the correct number of stages is returned
+            expect(result.allStages[0].stageName).to.equal('Identification'); // Check the stage name
+            expect(result.allStages[0].stageDetails).to.equal('Details for Stage One'); // Check the stage details
+        });
+
+        it('should get all stage details of specific stage ', async function () {
             const { casex, authorizedUser1 } = await loadFixture(deploy);
 
             // Add one new evidence item
@@ -250,35 +372,36 @@ describe('Case contract', function () {
 
             // Add details from the 'stageDetails' array
             for (let i = 0; i < stageDetails.length; i++) {
-                await casex.addStageDetails(0, i, stageDetails[i]);
+                await casex.addStageDetails(1000, i, stageDetails[i]);
             }
 
-            const result = await casex.getAllEvidenceItemDetails(0);
+            const result = await casex.getAllEvidenceItemDetails(1000);
 
             expect(result.id).to.be.equal(1000)
             expect(result.name).to.be.equal('Proccess tree')
             expect(result.stageCount).to.be.equal(6)
-            
+
         });
 
-        it('should add stage details only once', async function () {
+        it("should get a stage update time", async () => {
+            const { casex } = await loadFixture(deploy)
 
-            const { casex, authorizedUser1 } = await loadFixture(deploy);
             // Add an evidence item
-            await casex.addEvidenceItem(1, 'Sample Item');
+            await casex.addEvidenceItem(1, "Sample Item");
 
-            // Add stage details for the first time
-            await casex.addStageDetails(0, 0, 'First details');
+            // Add stage details
+            const stageIndex = 0;
+            const stageDetails = "Sample details";
+            await casex.addStageDetails(1, stageIndex, stageDetails);
 
-            // Try adding stage details again for the same stage, should revert
-            await expect(casex.addStageDetails(0, 0, 'Second details')).to.be.revertedWith(
-                'Stage detail already exists'
-            );
+            // Get the update time
+            const updateTime = await casex.getStageUpdateTime(1, stageIndex);
 
-            // Ensure that the stage details are correct
-            const stageDetails = await casex.getStageDetails(0, 0);
-            expect(stageDetails.stageDetails).to.equal('First details');
+            // Check if the update time is greater than zero
+            expect(updateTime).to.be.gt(0);
         });
+
+       
     });
 
     describe(`Authorize Oparations`, function () {
