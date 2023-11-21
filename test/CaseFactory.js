@@ -3,7 +3,7 @@ const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { N } = require('ethers');
 
-describe('CaseFactory contract', function () {
+describe.only('CaseFactory contract', function () {
     let owner, authorizedUser1, authorizedUser2, addr1, addr2, caseFactory;
 
     async function deploy() {
@@ -248,6 +248,63 @@ describe('CaseFactory contract', function () {
         await expect(caseFactory.connect(authorizedUser1).setAdmin(authorizedUser1.address)).to.be.revertedWith(
             "Only admin can perform this action"
         );
+    });
+
+    describe("getCasesInRange", function () {
+        it("should get cases within a valid range", async () => {
+            const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
+            await caseFactory.addAuthorizedUser(authorizedUser1.address);
+            await caseFactory.deployCase(1001, owner.address, authorizedUser1.address);
+            await caseFactory.deployCase(1002, owner.address, authorizedUser1.address);
+            await caseFactory.deployCase(1003, owner.address, authorizedUser1.address);
+
+            const startPoint = 0;
+            const endPoint = 3;
+
+            const [caseAddresses, caseIds, deploymentDates, caseStatuses] =
+                await caseFactory.getCasesInRange(startPoint, endPoint);
+            console.log(caseAddresses, caseIds)
+
+            expect(caseAddresses).to.have.lengthOf(endPoint - startPoint);
+            expect(caseIds).to.have.lengthOf(endPoint - startPoint);
+            expect(deploymentDates).to.have.lengthOf(endPoint - startPoint);
+            expect(caseStatuses).to.have.lengthOf(endPoint - startPoint);
+
+            
+        });
+
+        it("should handle an invalid range", async () => {
+            const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
+            // Deploy some cases for testing
+            await caseFactory.addAuthorizedUser(authorizedUser1.address);
+            await caseFactory.deployCase(1, owner.address, authorizedUser1.address);
+
+            const startPoint = 1;
+            const endPoint = 0;
+
+            // Ensure the function reverts for an invalid range
+            await expect(
+                caseFactory.getCasesInRange(startPoint, endPoint)
+            ).to.be.revertedWith("Invalid range");
+        });
+
+        it("should handle endPoint exceeding caseIDs length", async () => {
+            const { caseFactory, owner, authorizedUser1 } = await loadFixture(deploy);
+            // Deploy some cases for testing
+            await caseFactory.addAuthorizedUser(authorizedUser1.address);
+            await caseFactory.deployCase(1, owner.address, authorizedUser1.address);
+            await caseFactory.deployCase(2, owner.address, authorizedUser1.address);
+
+            const startPoint = 0;
+            const endPoint = 5; // exceed the length of caseIDs
+
+            // Call the function and ensure it doesn't revert
+            const [caseAddresses, caseIds, deploymentDates, caseStatuses] =
+                await caseFactory.getCasesInRange(startPoint, endPoint);
+
+            // Add your expectations based on your contract's logic and expected results
+            // For example, you can check if the IDs, addresses, and statuses match the deployed cases.
+        });
     });
 
 });

@@ -3,7 +3,7 @@ const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
 
-describe.only('Case contract', function () {
+describe('Case contract', function () {
 
     async function deploy() {
         const [owner, authorizedUser1, authorizedUser2, addr1, addr2, ...addrs] = await ethers.getSigners();

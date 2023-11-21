@@ -149,4 +149,45 @@ contract CaseFactory {
     function getCaseStatus(uint256 _caseID) public view returns (bool) {
         return cases[_caseID].active;
     }
+
+     /**
+     * @dev Get cases within a specified range.
+     * @param _startPoint The starting index of the range.
+     * @param _endPoint The ending index of the range.
+     * @return Arrays of case contract addresses, case IDs, deployment dates, and case statuses.
+     */
+    function getCasesInRange(uint256 _startPoint, uint256 _endPoint)
+        public
+        view
+        returns (
+            address[] memory,
+            uint256[] memory,
+            uint256[] memory,
+            bool[] memory
+        )
+    {
+        require(_startPoint < _endPoint, "Invalid range");
+
+        uint256 endPoint = _endPoint < caseIDs.length ? _endPoint : caseIDs.length;
+
+        address[] memory caseAddresses = new address[](endPoint - _startPoint);
+        uint256[] memory caseIds = new uint256[](endPoint - _startPoint);
+        uint256[] memory deploymentDates = new uint256[](endPoint - _startPoint);
+        bool[] memory caseStatuses = new bool[](endPoint - _startPoint);
+
+        for (uint256 i = _startPoint; i < endPoint; i++) {
+            CaseData storage caseData = cases[caseIDs[i]];
+            caseAddresses[i - _startPoint] = caseData.caseContractAddress;
+            caseIds[i - _startPoint] = caseData.caseID;
+            deploymentDates[i - _startPoint] = caseData.deploymentDate;
+            caseStatuses[i - _startPoint] = caseData.active;
+        }
+
+        return (caseAddresses, caseIds, deploymentDates, caseStatuses);
+    }
+
+    
+
+    
+
 }
