@@ -30,7 +30,16 @@ task('printPrivateKeys', 'Print the top 10 private keys from the mnemonic')
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.22",
+  solidity: {
+    version: "0.8.22",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200, // Adjust the number of runs based on your contract
+      },
+    },
+  },
+  
   networks: {
     hardhat: {
       forking: {
