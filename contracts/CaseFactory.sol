@@ -186,8 +186,5 @@ contract CaseFactory {
         return (caseAddresses, caseIds, deploymentDates, caseStatuses);
     }
 
-    
-
-    
 
 }
