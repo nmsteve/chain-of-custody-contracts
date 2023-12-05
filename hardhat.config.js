@@ -1,7 +1,8 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 const ethers = require('ethers');
-task('printPrivateKeys', 'Print the top 10 private keys from the mnemonic')
+
+task('printAddress', 'Print the top 10 private keys, addresses, and balances from the mnemonic')
   .setAction(async (args, hre) => {
     const mnemonic = process.env.MNEMONIC;
     if (!mnemonic) {
@@ -9,23 +10,24 @@ task('printPrivateKeys', 'Print the top 10 private keys from the mnemonic')
       return;
     }
 
-    const wallets = [];
-    const hdNode = ethers.HDNodeWallet.fromPhrase(mnemonic);
+    const mainWallet = ethers.HDNodeWallet.fromPhrase(mnemonic);
 
     for (let i = 0; i < 10; i++) {
-      const wallet = hdNode.deriveChild(i)
+      const wallet = mainWallet.deriveChild(i);
       const privateKey = wallet.privateKey;
-      console.log(privateKey)
       const address = wallet.address;
-      console.log(address)
-      wallets.push({ privateKey, address });
-    }
 
-    // console.log('Top 10 Private Keys:');
-    // wallets.forEach((privateKey, index) => {
-    //   console.log(`KEY_${index + 1}=${privateKey}`);
-    // });
+      const balance = await hre.ethers.provider.getBalance(address);
+      const balanceInEth = ethers.formatEther(balance);
+
+      console.log(`Account: ${i}`)
+      //console.log(`Private Key: ${privateKey}`);
+      console.log(`Address: ${address}`);
+      console.log(`Balance: ${balanceInEth}`);
+      console.log('-------------------------');
+    }
   });
+
 
 
 /** @type import('hardhat/config').HardhatUserConfig */
