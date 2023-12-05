@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
-describe('Contract', function () {
+describe.only('Accounts Contract', function () {
     let accountsContract;
     let admin;
 
