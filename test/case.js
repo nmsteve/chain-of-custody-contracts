@@ -52,7 +52,7 @@ describe('Case contract', function () {
             expect(stageNames).to.be.an('array'); // Check if it returns an array
             expect(stageNames.length).to.be.equal(7)
         });
-        
+
     });
 
     describe('EvidenceItem Items name and ID', function () {
@@ -117,11 +117,11 @@ describe('Case contract', function () {
 
 
 
-    } )
+    })
 
     describe('Evidence Item Stage details', function () {
 
-        
+
 
         it('Should add Stage Details to an evidence item', async function () {
 
@@ -136,7 +136,7 @@ describe('Case contract', function () {
                 }
             };
 
-          
+
             // Add the evidence item
             await casex.addEvidenceItem(evidenceItem.id, evidenceItem.name);
 
@@ -238,7 +238,7 @@ describe('Case contract', function () {
             await expect(casex.connect(authorizedUser2).addStageDetails(evidenceId, stageId, newDetails))
                 .to.be.revertedWith("Not authorized");
         });
-      
+
     });
 
     describe('Evidence Item Stage details get oporations', function () {
@@ -401,7 +401,7 @@ describe('Case contract', function () {
             expect(updateTime).to.be.gt(0);
         });
 
-       
+
     });
 
     describe(`Authorize Oparations`, function () {

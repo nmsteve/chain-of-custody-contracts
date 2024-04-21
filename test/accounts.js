@@ -2,13 +2,12 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
-describe.only('Accounts Contract', function () {
+describe('Accounts Contract', function () {
     let accountsContract;
     let admin;
 
     async function deploy() {
         const [owner, user1, user2, user3, user4, addr1, addr2, ...addrs] = await ethers.getSigners();
-
         const AdminContract = await ethers.getContractFactory('Accounts');
         accountsContract = await AdminContract.deploy();
         return { accountsContract, admin: owner, addr1, user1, user2, user3, user4 };

@@ -6,11 +6,17 @@ import "./Case.sol";
 contract CaseFactory {
     address public admin;
 
+    struct AccessRecord {
+        address user;
+        uint256 timestamp;
+    }
+
     struct CaseData {
         address caseContractAddress;
         uint256 caseID;
         uint256 deploymentDate;
         bool active;
+        AccessRecord[] accessRecords; // Array to store access records
     }
 
     mapping(uint256 => CaseData) public cases;
@@ -31,7 +37,6 @@ contract CaseFactory {
     event AuthorizedUserRemoved(address userAddress);
     event StagesSet(address admin, string[] stages);
     event AdminUpdated(address newAdmin);
-
 
     constructor() {
         admin = msg.sender;
@@ -74,7 +79,7 @@ contract CaseFactory {
      */
     function setCaseStages(string[] memory _stages) public onlyAdmin {
         evidenceStages = _stages;
-         emit StagesSet(admin, _stages);
+        emit StagesSet(admin, _stages);
     }
 
     /**
@@ -91,11 +96,20 @@ contract CaseFactory {
      * @dev Deploy a new case contract.
      * @param _caseID The ID of the new case.
      */
-    function deployCase(uint256 _caseID, address _admin, address _deployer) public onlyAuthorized {
+    function deployCase(
+        uint256 _caseID,
+        address _admin,
+        address _deployer
+    ) public onlyAuthorized {
         require(cases[_caseID].caseID == 0, "Case with this ID already exists");
         uint256 deploymentDate = block.timestamp;
         Case newCase = new Case(_admin, _deployer, evidenceStages);
-        cases[_caseID] = CaseData(address(newCase), _caseID, deploymentDate, true);
+
+        cases[_caseID].caseContractAddress = address(newCase);
+        cases[_caseID].caseID = _caseID;
+        cases[_caseID].deploymentDate = deploymentDate;
+        cases[_caseID].active = true;
+
         caseIDs.push(_caseID);
 
         emit CaseDeployed(_caseID, address(newCase), deploymentDate);
@@ -126,6 +140,63 @@ contract CaseFactory {
     }
 
     /**
+     * @dev Record access to a case.
+     * @param _caseID The ID of the case.
+     */
+    function access(uint256 _caseID) public onlyAuthorized {
+        require(cases[_caseID].caseID != 0, "Case with this ID does not exist");
+        require(cases[_caseID].active == true, "Case is disabled");
+
+        // Push a new access record object to the array
+        cases[_caseID].accessRecords.push(
+            AccessRecord(msg.sender, block.timestamp)
+        );
+    }
+
+    /**
+     * @dev Get the latest access record for a specific user in a case.
+     * @param _caseID The ID of the case.
+     * @param _userAddress The address of the user.
+     * @return The timestamp of when the user last accessed the case.
+     */
+    function getAccessRecord(
+        uint256 _caseID,
+        address _userAddress
+    ) public view returns (uint256) {
+        require(cases[_caseID].caseID != 0, "Case with this ID does not exist");
+
+        AccessRecord[] memory accessRecords = cases[_caseID].accessRecords;
+        for (uint256 i = accessRecords.length - 1; i >= 0; i--) {
+            if (accessRecords[i].user == _userAddress) {
+                return accessRecords[i].timestamp;
+            }
+        }
+        return 0; // If no access record found for the user
+    }
+
+    /**
+     * @dev Get all access records for a specific case.
+     * @param _caseID The ID of the case.
+     * @return Arrays of addresses and their corresponding access timestamps.
+     */
+    function getAllAccessRecords(
+        uint256 _caseID
+    ) public view returns (address[] memory, uint256[] memory) {
+        require(cases[_caseID].caseID != 0, "Case with this ID does not exist");
+
+        AccessRecord[] memory accessRecords = cases[_caseID].accessRecords;
+        address[] memory users = new address[](accessRecords.length);
+        uint256[] memory accessTimestamps = new uint256[](accessRecords.length);
+
+        for (uint256 i = 0; i < accessRecords.length; i++) {
+            users[i] = accessRecords[i].user;
+            accessTimestamps[i] = accessRecords[i].timestamp;
+        }
+
+        return (users, accessTimestamps);
+    }
+
+    /**
      * @dev Get all stages used when deploying a case.
      * @return The array of stage names.
      */
@@ -150,13 +221,16 @@ contract CaseFactory {
         return cases[_caseID].active;
     }
 
-     /**
+    /**
      * @dev Get cases within a specified range.
      * @param _startPoint The starting index of the range.
      * @param _endPoint The ending index of the range.
      * @return Arrays of case contract addresses, case IDs, deployment dates, and case statuses.
      */
-    function getCasesInRange(uint256 _startPoint, uint256 _endPoint)
+    function getCasesInRange(
+        uint256 _startPoint,
+        uint256 _endPoint
+    )
         public
         view
         returns (
@@ -168,11 +242,15 @@ contract CaseFactory {
     {
         require(_startPoint < _endPoint, "Invalid range");
 
-        uint256 endPoint = _endPoint < caseIDs.length ? _endPoint : caseIDs.length;
+        uint256 endPoint = _endPoint < caseIDs.length
+            ? _endPoint
+            : caseIDs.length;
 
         address[] memory caseAddresses = new address[](endPoint - _startPoint);
         uint256[] memory caseIds = new uint256[](endPoint - _startPoint);
-        uint256[] memory deploymentDates = new uint256[](endPoint - _startPoint);
+        uint256[] memory deploymentDates = new uint256[](
+            endPoint - _startPoint
+        );
         bool[] memory caseStatuses = new bool[](endPoint - _startPoint);
 
         for (uint256 i = _startPoint; i < endPoint; i++) {
@@ -185,6 +263,4 @@ contract CaseFactory {
 
         return (caseAddresses, caseIds, deploymentDates, caseStatuses);
     }
-
-
 }
