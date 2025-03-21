@@ -12,6 +12,7 @@ contract Accounts {
     }
 
     mapping(uint256 => User) public users;
+    mapping(address => uint256) public userAddressToId; // New mapping
     uint256 public nextUserId = 0;
 
     event UserCreated(uint256 userId, address userAddress);
@@ -43,8 +44,13 @@ contract Accounts {
             bytes(_passwordHash).length > 0,
             "Password hash cannot be empty"
         );
+        require(
+            userAddressToId[_userAddress] == 0,
+            "User address already exists"
+        );
 
         users[nextUserId] = User(_userAddress, _passwordHash, true, 0);
+        userAddressToId[_userAddress] = nextUserId;
         emit UserCreated(nextUserId, _userAddress);
         nextUserId++;
     }
@@ -90,23 +96,28 @@ contract Accounts {
         emit UserStateSet(_state);
     }
 
-    /**
-     * @dev Update the user's address and password hash by their user ID.
-     * @param _userId The ID of the user to update.
-     * @param _newPasswordHash The new password hash.
-     */
     function updateUser(
         uint256 _userId,
+        address _newAddress,
         string memory _newPasswordHash
     ) public onlyAdmin {
         require(_userId < nextUserId, "User does not exist");
-        require(
-            bytes(_newPasswordHash).length > 0,
-            "Password hash cannot be empty"
-        );
 
         User storage user = users[_userId];
-        user.passwordHash = _newPasswordHash;
+
+        if (_newAddress != address(0)) {
+            require(
+                userAddressToId[_newAddress] == 0,
+                "New address already exists"
+            );
+            delete userAddressToId[user.userAddress];
+            user.userAddress = _newAddress;
+            userAddressToId[_newAddress] = _userId;
+        }
+
+        if (bytes(_newPasswordHash).length > 0) {
+            user.passwordHash = _newPasswordHash;
+        }
 
         emit UserUpdated(_userId, _newPasswordHash);
     }
@@ -123,6 +134,22 @@ contract Accounts {
         }
 
         return (userAddresses);
+    }
+
+    /**
+     * @dev Get user ID by their Ethereum address
+     * @param _userAddress The user's Ethereum address
+     * @return The user's ID
+     */
+    function getUserIdByAddress(
+        address _userAddress
+    ) public view returns (uint256) {
+        uint256 userId = userAddressToId[_userAddress];
+        require(
+            userId > 0 || (userId == 0 && users[0].userAddress == _userAddress),
+            "User does not exist"
+        );
+        return userId;
     }
 
     /**

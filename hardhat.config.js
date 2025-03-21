@@ -64,13 +64,34 @@ module.exports = {
         passphrase: "",
       },
     },
+
+    holesky: {
+      url: process.env.HOLESKY,
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+        path: "m/44'/60'/0'/0",
+        initialIndex: 0,
+        count: 10,
+        passphrase: "",
+      },
+    },
   
   },
 
   etherscan: {
+    apiKey: {
+      holesky: process.env.ETHERSCAN_API_KEY,
+    },
+    customChains: [
+      {
+        network: "holesky",
+        chainId: 17000,
+        urls: {
+          apiURL: "https://api-holesky.etherscan.io/api",
+          browserURL: "https://holesky.etherscan.io"
+        }
+      }
+    ]
+}
 
-    apiKey: process.env.ETHERSCAN_API_KEY,
-    //apiKey: process.env.BSCSCAN_API_KEY
-    //apiKey: process.env.ARBITRUM_API_KEY
-  },
 };
