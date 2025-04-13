@@ -21,13 +21,10 @@ async function main() {
   ];
 
   const [owner] = await hre.ethers.getSigners()
+  console.log('Owner address:', owner.address);
   this.contract = await hre.ethers.getContractFactory('CaseFactory');
-  this.contract = await this.contract.deploy();
-  await this.contract.waitForDeployment()
-
-  console.log(
-    `contract deployed to ${this.contract.target}`
-  )
+  this.contract = this.contract.attach('0xa0b375b2AA0472982541f97acE3302fbA05e45ae')
+  await this.contract.connect(owner).setAdmin('0xad291fd43f685f7658cb241c2f8ed3e68aa851a2')
 }
 
 // We recommend this pattern to be able to use async/await everywhere

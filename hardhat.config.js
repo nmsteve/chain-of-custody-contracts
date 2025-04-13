@@ -33,7 +33,7 @@ task('printAddress', 'Print the top 10 private keys, addresses, and balances fro
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.8.22",
+    version: "0.8.0",
     settings: {
       optimizer: {
         enabled: true,
