@@ -5,6 +5,8 @@
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
 const hre = require("hardhat");
+const dotenv = require('dotenv');
+dotenv.config();
 
 async function main() {
   
@@ -23,7 +25,9 @@ async function main() {
   const [owner] = await hre.ethers.getSigners()
   console.log('Owner address:', owner.address);
   this.contract = await hre.ethers.getContractFactory('CaseFactory');
-  this.contract = this.contract.attach('0xa0b375b2AA0472982541f97acE3302fbA05e45ae')
+  this.contract = this.contract.attach(process.env.CASEFACTORY_CONTRACT_ADDRESS);
+  const adminAddress = await this.contract.admin();
+  console.log("Contract admin:", adminAddress);
   await this.contract.connect(owner).setAdmin('0xad291fd43f685f7658cb241c2f8ed3e68aa851a2')
 }
 
