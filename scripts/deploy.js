@@ -7,7 +7,7 @@
 const hre = require("hardhat");
 
 async function main() {
-  
+
 
   // Simulating stage names
   const stages = [
@@ -21,7 +21,7 @@ async function main() {
   ];
 
   const [owner] = await hre.ethers.getSigners()
-  this.contract = await hre.ethers.getContractFactory('CaseFactory');
+  this.contract = await hre.ethers.getContractFactory('Accounts');
   this.contract = await this.contract.deploy();
   await this.contract.waitForDeployment()
 
